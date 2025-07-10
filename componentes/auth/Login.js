@@ -54,6 +54,10 @@ export default function Login({ navigation }) {
       <TouchableOpacity onPress={() => navigation.navigate('Register')}>
         <Text style={styles.link}>¿No tenés cuenta? Registrate</Text>
       </TouchableOpacity>
+
+      <TouchableOpacity onPress={() => navigation.replace('Welcome')}>
+      <Text style={styles.link}>← Volver al inicio</Text>
+      </TouchableOpacity>
     </View>
   )
 }

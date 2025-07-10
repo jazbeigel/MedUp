@@ -1,11 +1,24 @@
 import React, { useState } from 'react'
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native'
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform
+} from 'react-native'
 import { supabase } from '../../utils/supabaseClient'
 
 export default function Register({ navigation }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [nombreCompleto, setNombreCompleto] = useState('')
+  const [dni, setDni] = useState('')
+  const [direccion, setDireccion] = useState('')
+  const [telefono, setTelefono] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
@@ -16,69 +29,178 @@ export default function Register({ navigation }) {
     }
 
     setLoading(true)
-    const { data, error } = await supabase.auth.signUp({
+
+    const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
     })
+
+    if (signUpError) {
+      setError(signUpError.message)
+      setLoading(false)
+      return
+    }
+
+    const userId = data.user?.id
+
+    const { error: insertError } = await supabase.from('pacientes').insert([
+      {
+        usuario_id: userId,
+        nombre_completo: nombreCompleto,
+        dni,
+        direccion,
+        telefono,
+      },
+    ])
+
     setLoading(false)
 
-    if (error) {
-      setError(error.message)
-    } else {
-      setError(null)
-      alert('Registro exitoso, revisa tu email para confirmar tu cuenta')
-      navigation.replace('Login')
+    if (insertError) {
+      setError(insertError.message)
+      return
     }
+
+    setError(null)
+    alert('Registro exitoso. Revisá tu email para confirmar tu cuenta.')
+    navigation.replace('Login')
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Registro en MedUp</Text>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={{ flex: 1, backgroundColor: '#fff' }}
+    >
+      <ScrollView
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Text style={styles.title}>Registro en MedUp</Text>
 
-      <TextInput
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
-        autoCapitalize="none"
-        style={styles.input}
-      />
+        <TextInput
+          placeholder="Nombre completo"
+          value={nombreCompleto}
+          onChangeText={setNombreCompleto}
+          style={styles.input}
+        />
+        <TextInput
+          placeholder="DNI"
+          value={dni}
+          onChangeText={setDni}
+          keyboardType="numeric"
+          style={styles.input}
+        />
+        <TextInput
+          placeholder="Dirección"
+          value={direccion}
+          onChangeText={setDireccion}
+          style={styles.input}
+        />
+        <TextInput
+          placeholder="Teléfono"
+          value={telefono}
+          onChangeText={setTelefono}
+          keyboardType="phone-pad"
+          style={styles.input}
+        />
+        <TextInput
+          placeholder="Email"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          autoCorrect={false}
+          style={styles.input}
+        />
+        <TextInput
+          placeholder="Contraseña"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry={true}
+          autoCapitalize="none"
+          autoCorrect={false}
+          textContentType="password"
+          keyboardType="default"
+          style={styles.input}
+        />
+        <TextInput
+          placeholder="Confirmar contraseña"
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
+          secureTextEntry={true}
+          autoCapitalize="none"
+          autoCorrect={false}
+          textContentType="password"
+          keyboardType="default"
+          style={styles.input}
+        />
 
-      <TextInput
-        placeholder="Contraseña"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-        style={styles.input}
-      />
+        {error && <Text style={styles.error}>{error}</Text>}
 
-      <TextInput
-        placeholder="Confirmar contraseña"
-        value={confirmPassword}
-        onChangeText={setConfirmPassword}
-        secureTextEntry
-        style={styles.input}
-      />
+        <TouchableOpacity
+          onPress={handleRegister}
+          style={styles.button}
+          disabled={loading}
+        >
+          <Text style={styles.buttonText}>
+            {loading ? 'Registrando...' : 'Registrarse'}
+          </Text>
+        </TouchableOpacity>
 
-      {error && <Text style={styles.error}>{error}</Text>}
+        <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+          <Text style={styles.link}>¿Ya tenés cuenta? Ingresá</Text>
+        </TouchableOpacity>
 
-      <TouchableOpacity onPress={handleRegister} style={styles.button} disabled={loading}>
-        <Text style={styles.buttonText}>{loading ? 'Registrando...' : 'Registrarse'}</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-        <Text style={styles.link}>¿Ya tenés cuenta? Ingresá</Text>
-      </TouchableOpacity>
-    </View>
+        <TouchableOpacity onPress={() => navigation.replace('Welcome')}>
+          <Text style={styles.link}>← Volver al inicio</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </KeyboardAvoidingView>
   )
 }
 
 const styles = StyleSheet.create({
-  container: { flex:1, justifyContent:'center', alignItems:'center', padding:20, backgroundColor:'#fff' },
-  title: { fontSize:24, marginBottom:20, fontWeight:'bold', color:'#1A1A6E' },
-  input: { width:'100%', height:50, borderColor:'#ccc', borderWidth:1, borderRadius:10, paddingHorizontal:15, marginVertical:10 },
-  button: { width:'100%', height:50, backgroundColor:'#1A1A6E', borderRadius:10, justifyContent:'center', alignItems:'center', marginTop:15 },
-  buttonText: { color:'#fff', fontSize:18, fontWeight:'bold' },
-  error: { color:'red', marginTop:10 },
-  link: { color:'#1A1A6E', marginTop:15, textDecorationLine:'underline' }
+  container: {
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  title: {
+    fontSize: 24,
+    marginBottom: 20,
+    fontWeight: 'bold',
+    color: '#1A1A6E',
+    textAlign: 'center'
+  },
+  input: {
+    width: '100%',
+    height: 50,
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 15,
+    marginVertical: 10
+  },
+  button: {
+    width: '100%',
+    height: 50,
+    backgroundColor: '#1A1A6E',
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 15
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold'
+  },
+  error: {
+    color: 'red',
+    marginTop: 10
+  },
+  link: {
+    color: '#1A1A6E',
+    marginTop: 15,
+    textDecorationLine: 'underline'
+  }
 })
