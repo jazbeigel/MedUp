@@ -23,46 +23,63 @@ export default function Register({ navigation }) {
   const [error, setError] = useState(null)
 
   const handleRegister = async () => {
+    setError(null)
+
+    // Validaciones básicas
+    if (!email || !password || !confirmPassword || !nombreCompleto || !dni || !telefono) {
+      setError('Por favor, completá todos los campos obligatorios.')
+      return
+    }
+
     if (password !== confirmPassword) {
-      setError('Las contraseñas no coinciden')
+      setError('Las contraseñas no coinciden.')
       return
     }
 
     setLoading(true)
 
-    const { data, error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-    })
+    try {
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+      })
 
-    if (signUpError) {
-      setError(signUpError.message)
+      if (signUpError) {
+        setError(signUpError.message)
+        setLoading(false)
+        return
+      }
+
+      const userId = data.user?.id
+      if (!userId) {
+        setError('No se pudo obtener el ID del usuario.')
+        setLoading(false)
+        return
+      }
+
+      const { error: insertError } = await supabase.from('pacientes').insert([
+        {
+          usuario_id: userId,
+          nombre_completo: nombreCompleto,
+          dni,
+          direccion,
+          telefono,
+        },
+      ])
+
+      if (insertError) {
+        setError(insertError.message)
+        setLoading(false)
+        return
+      }
+
+      alert('Registro exitoso. Revisá tu email para confirmar tu cuenta.')
+      navigation.replace('Login')
+    } catch (err) {
+      setError('Ocurrió un error inesperado. Intentalo de nuevo.')
+    } finally {
       setLoading(false)
-      return
     }
-
-    const userId = data.user?.id
-
-    const { error: insertError } = await supabase.from('pacientes').insert([
-      {
-        usuario_id: userId,
-        nombre_completo: nombreCompleto,
-        dni,
-        direccion,
-        telefono,
-      },
-    ])
-
-    setLoading(false)
-
-    if (insertError) {
-      setError(insertError.message)
-      return
-    }
-
-    setError(null)
-    alert('Registro exitoso. Revisá tu email para confirmar tu cuenta.')
-    navigation.replace('Login')
   }
 
   return (
@@ -116,10 +133,6 @@ export default function Register({ navigation }) {
           value={password}
           onChangeText={setPassword}
           secureTextEntry={true}
-          autoCapitalize="none"
-          autoCorrect={false}
-          textContentType="password"
-          keyboardType="default"
           style={styles.input}
         />
         <TextInput
@@ -127,10 +140,6 @@ export default function Register({ navigation }) {
           value={confirmPassword}
           onChangeText={setConfirmPassword}
           secureTextEntry={true}
-          autoCapitalize="none"
-          autoCorrect={false}
-          textContentType="password"
-          keyboardType="default"
           style={styles.input}
         />
 
