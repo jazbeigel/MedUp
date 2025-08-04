@@ -1,0 +1,120 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model usuarios {
+  id              String           @id @default(uuid())
+  pacientes       pacientes[]
+  profesionales   profesionales[]
+}
+
+model especialidades {
+  id             String           @id @default(uuid())
+  nombre         String
+  profesionales  profesionales[]
+}
+
+model pacientes {
+  id               String           @id @default(uuid())
+  usuario_id       String
+  nombre_completo  String
+  fecha_nacimiento DateTime
+  dni              String
+  direccion        String
+  telefono         String
+
+  usuario          usuarios        @relation(fields: [usuario_id], references: [id])
+  recetas          recetas[]
+  resenas          resenas[]       @relation("PacienteResena")
+  turnos           turnos[]
+  solicitudes      solicitudes[]
+}
+
+model profesionales {
+  id              String           @id @default(uuid())
+  usuario_id      String
+  nombre_completo String
+  matricula       String
+  especialidad    String
+  telefono        String
+  id_especialidad String
+
+  usuario         usuarios         @relation(fields: [usuario_id], references: [id])
+  especialidadRef especialidades   @relation(fields: [id_especialidad], references: [id])
+  recetas         recetas[]
+  resenas         resenas[]        @relation("ProfesionalResena")
+  turnos          turnos[]
+}
+
+model recetas {
+  id           String           @id @default(uuid())
+  paciente_id  String
+  doctor_id    String
+  creado_el    DateTime
+  diagnostico  String
+  observaciones String
+
+  paciente     pacientes        @relation(fields: [paciente_id], references: [id])
+  doctor       profesionales    @relation(fields: [doctor_id], references: [id])
+  medicamentos medicamentos[]
+  solicitudes  solicitudes[]
+}
+
+model medicamentos {
+  id         String   @id @default(uuid())
+  receta_id  String
+  nombre     String
+  dosis      String
+  frecuencia String
+  duration   String
+
+  receta     recetas  @relation(fields: [receta_id], references: [id])
+}
+
+model resenas {
+  id            String     @id @default(uuid())
+  id_profesional String
+  id_paciente    String
+  calificacion   Int
+  comentario     String
+  fecha          DateTime
+
+  profesional    profesionales @relation("ProfesionalResena", fields: [id_profesional], references: [id])
+  paciente       pacientes     @relation("PacienteResena", fields: [id_paciente], references: [id])
+}
+
+model turnos {
+  id            String        @id @default(uuid())
+  paciente_id   String
+  profesional_id String
+  fecha         DateTime
+  creado_el     DateTime
+
+  paciente      pacientes     @relation(fields: [paciente_id], references: [id])
+  profesional   profesionales @relation(fields: [profesional_id], references: [id])
+}
+
+model solicitudes {
+  id                String     @id @default(uuid())
+  paciente_id       String
+  receta_id         String
+  estado            String
+  creado_el         DateTime
+  direccion_entrega String
+  fecha_necesaria   DateTime
+
+  paciente          pacientes  @relation(fields: [paciente_id], references: [id])
+  receta            recetas    @relation(fields: [receta_id], references: [id])
+}
