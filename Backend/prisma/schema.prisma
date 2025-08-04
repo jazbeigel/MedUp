@@ -31,9 +31,11 @@ model pacientes {
   usuario_id       String
   nombre_completo  String
   fecha_nacimiento DateTime
-  dni              String
+  dni              String           @unique
   direccion        String
   telefono         String
+  email            String           @unique
+  password_hash    String
 
   usuario          usuarios        @relation(fields: [usuario_id], references: [id])
   recetas          recetas[]

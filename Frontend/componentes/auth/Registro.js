@@ -15,6 +15,7 @@ export default function Register({ navigation }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [fecha_nacimiento, setFechaNacimiento] = useState('')
   const [nombreCompleto, setNombreCompleto] = useState('')
   const [dni, setDni] = useState('')
   const [direccion, setDireccion] = useState('')
@@ -26,7 +27,7 @@ export default function Register({ navigation }) {
     setError(null)
 
     // Validaciones básicas
-    if (!email || !password || !confirmPassword || !nombreCompleto || !dni || !telefono) {
+    if (!email || !password || !confirmPassword || !fecha_nacimiento || !nombreCompleto || !dni || !telefono) {
       setError('Por favor, completá todos los campos obligatorios.')
       return
     }
@@ -61,6 +62,7 @@ export default function Register({ navigation }) {
         {
           usuario_id: userId,
           nombre_completo: nombreCompleto,
+          fecha_nacimiento,
           dni,
           direccion,
           telefono,
