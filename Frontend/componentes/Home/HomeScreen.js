@@ -10,7 +10,7 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Bienvenido a MedUp</Text>
+      <Text style={styles.title}>Bienvenidooooo a MedUp</Text>
       <Text style={styles.subtitle}>Tu app para gestión médica</Text>
 
       <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Info')}>
