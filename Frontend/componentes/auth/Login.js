@@ -1,18 +1,24 @@
 import React from 'react'
 import { View, Text, TouchableOpacity, Image, StyleSheet } from 'react-native'
+import logoMedup from '../../assets/logo.png'
+
 
 export default function Welcome({ navigation }) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
       <Image
-      source={require('../../assets/logo.png')}
+      source={logoMedup}
       style={styles.logo}
   resizeMode="contain"
 />
       </View>
 
       <Text style={styles.welcome}>¡Hola! Bienvenido a{"\n"}<Text style={styles.bold}>MedUp</Text></Text>
+      
+      <TouchableOpacity style={styles.buttonPaciente} onPress={() => navigation.navigate('LoginPaciente')}>
+        <Text style={styles.buttonText}></Text>
+      </TouchableOpacity>
 
       <Text style={styles.question}>
         ¿Cómo desea <Text style={styles.link}>iniciar sesión</Text>?
