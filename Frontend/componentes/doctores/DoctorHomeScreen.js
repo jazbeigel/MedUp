@@ -11,31 +11,29 @@ import {
 } from 'react-native'
 import { supabase } from '../../utils/supabaseClient'
 
-export default function HomeScreen({ navigation }) {
+export default function DoctorHomeScreen({ navigation }) {
   const [user, setUser] = useState(null)
   const [turnos, setTurnos] = useState([])
-  const [profesionales, setProfesionales] = useState([])
   const [refreshing, setRefreshing] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
 
   useEffect(() => {
     getUserData()
     loadTurnos()
-    loadProfesionales()
   }, [])
 
   const getUserData = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
-        // Obtener datos del paciente
-        const { data: paciente } = await supabase
-          .from('pacientes')
+        // Obtener datos del profesional
+        const { data: profesional } = await supabase
+          .from('profesionales')
           .select('*')
           .eq('usuario_id', user.id)
           .single()
         
-        setUser(paciente)
+        setUser(profesional)
       }
     } catch (error) {
       console.error('Error obteniendo datos del usuario:', error)
@@ -46,27 +44,33 @@ export default function HomeScreen({ navigation }) {
     try {
       if (!user) return
       
-      const response = await fetch(`http://localhost:3000/turnos/paciente/${user.id}`)
-      const data = await response.json()
+      const { data, error } = await supabase
+        .from('turnos')
+        .select(`
+          *,
+          pacientes:paciente_id (
+            nombre_completo,
+            telefono,
+            email
+          )
+        `)
+        .eq('profesional_id', user.id)
+        .order('fecha_hora', { ascending: true })
+      
+      if (error) {
+        console.error('Error cargando turnos:', error)
+        return
+      }
+      
       setTurnos(data)
     } catch (error) {
       console.error('Error cargando turnos:', error)
     }
   }
 
-  const loadProfesionales = async () => {
-    try {
-      const response = await fetch('http://localhost:3000/profesionales')
-      const data = await response.json()
-      setProfesionales(data)
-    } catch (error) {
-      console.error('Error cargando profesionales:', error)
-    }
-  }
-
   const onRefresh = async () => {
     setRefreshing(true)
-    await Promise.all([loadTurnos(), loadProfesionales()])
+    await loadTurnos()
     setRefreshing(false)
   }
 
@@ -85,6 +89,24 @@ export default function HomeScreen({ navigation }) {
       hour: '2-digit',
       minute: '2-digit'
     })
+  }
+
+  const confirmarTurno = async (turnoId) => {
+    Alert.alert(
+      'Confirmar Turno',
+      '¿Confirmás este turno?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Confirmar',
+          onPress: async () => {
+            // Aquí podrías implementar la lógica para confirmar el turno
+            Alert.alert('Éxito', 'Turno confirmado exitosamente')
+            loadTurnos()
+          }
+        }
+      ]
+    )
   }
 
   const cancelarTurno = async (turnoId) => {
@@ -126,22 +148,16 @@ export default function HomeScreen({ navigation }) {
     >
       <View style={styles.header}>
         <Text style={styles.welcomeText}>
-          ¡Hola {user?.nombre_completo || 'Usuario'}!
+          ¡Hola Dr. {user?.nombre_completo || 'Usuario'}!
         </Text>
-        <Text style={styles.subtitle}>Tu panel de paciente</Text>
+        <Text style={styles.subtitle}>Tu panel de profesional</Text>
+        <Text style={styles.especialidad}>{user?.especialidad}</Text>
       </View>
 
       {/* Sección de Acciones Rápidas */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Acciones Rápidas</Text>
         
-        <TouchableOpacity 
-          style={styles.actionButton}
-          onPress={() => navigation.navigate('SolicitarTurno', { profesionales })}
-        >
-          <Text style={styles.actionButtonText}>📅 Solicitar Turno</Text>
-        </TouchableOpacity>
-
         <TouchableOpacity 
           style={styles.actionButton}
           onPress={() => setShowNotifications(true)}
@@ -157,37 +173,42 @@ export default function HomeScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      {/* Sección de Turnos Próximos */}
+      {/* Sección de Turnos del Día */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Mis Turnos Próximos</Text>
+        <Text style={styles.sectionTitle}>Turnos de Hoy</Text>
         
         {turnos.length === 0 ? (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>No tenés turnos programados</Text>
-            <TouchableOpacity 
-              style={styles.emptyStateButton}
-              onPress={() => navigation.navigate('SolicitarTurno', { profesionales })}
-            >
-              <Text style={styles.emptyStateButtonText}>Solicitar mi primer turno</Text>
-            </TouchableOpacity>
+            <Text style={styles.emptyStateText}>No tenés turnos programados para hoy</Text>
           </View>
         ) : (
           turnos.map((turno) => (
             <View key={turno.id} style={styles.turnoCard}>
               <View style={styles.turnoHeader}>
-                <Text style={styles.turnoDoctor}>
-                  Dr. {turno.profesional.nombre_completo}
+                <Text style={styles.turnoPaciente}>
+                  {turno.paciente.nombre_completo}
                 </Text>
-                <Text style={styles.turnoEspecialidad}>
-                  {turno.profesional.especialidad}
+                <Text style={styles.turnoTelefono}>
+                  📞 {turno.paciente.telefono}
                 </Text>
               </View>
               
+              <Text style={styles.turnoEmail}>
+                📧 {turno.paciente.email}
+              </Text>
+              
               <Text style={styles.turnoFecha}>
-                {formatDate(turno.fecha)}
+                📅 {formatDate(turno.fecha)}
               </Text>
               
               <View style={styles.turnoActions}>
+                <TouchableOpacity 
+                  style={styles.confirmButton}
+                  onPress={() => confirmarTurno(turno.id)}
+                >
+                  <Text style={styles.confirmButtonText}>Confirmar</Text>
+                </TouchableOpacity>
+                
                 <TouchableOpacity 
                   style={styles.cancelButton}
                   onPress={() => cancelarTurno(turno.id)}
@@ -197,6 +218,42 @@ export default function HomeScreen({ navigation }) {
               </View>
             </View>
           ))
+        )}
+      </View>
+
+      {/* Sección de Próximos Turnos */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Próximos Turnos</Text>
+        
+        {turnos.filter(turno => new Date(turno.fecha) > new Date()).length === 0 ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyStateText}>No tenés turnos futuros programados</Text>
+          </View>
+        ) : (
+          turnos
+            .filter(turno => new Date(turno.fecha) > new Date())
+            .map((turno) => (
+              <View key={turno.id} style={styles.turnoCard}>
+                <View style={styles.turnoHeader}>
+                  <Text style={styles.turnoPaciente}>
+                    {turno.paciente.nombre_completo}
+                  </Text>
+                </View>
+                
+                <Text style={styles.turnoFecha}>
+                  📅 {formatDate(turno.fecha)}
+                </Text>
+                
+                <View style={styles.turnoActions}>
+                  <TouchableOpacity 
+                    style={styles.cancelButton}
+                    onPress={() => cancelarTurno(turno.id)}
+                  >
+                    <Text style={styles.cancelButtonText}>Cancelar</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))
         )}
       </View>
 
@@ -228,10 +285,13 @@ export default function HomeScreen({ navigation }) {
                 turnos.map((turno) => (
                   <View key={turno.id} style={styles.notificationItem}>
                     <Text style={styles.notificationTitle}>
-                      Turno confirmado con Dr. {turno.profesional.nombre_completo}
+                      Nuevo turno con {turno.paciente.nombre_completo}
                     </Text>
                     <Text style={styles.notificationText}>
                       {formatDate(turno.fecha)}
+                    </Text>
+                    <Text style={styles.notificationContact}>
+                      📧 {turno.paciente.email} | 📞 {turno.paciente.telefono}
                     </Text>
                   </View>
                 ))
@@ -267,7 +327,14 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
     color: '#fff',
-    opacity: 0.8
+    opacity: 0.8,
+    marginBottom: 5
+  },
+  especialidad: {
+    fontSize: 14,
+    color: '#fff',
+    opacity: 0.7,
+    fontStyle: 'italic'
   },
   section: {
     margin: 20,
@@ -305,17 +372,7 @@ const styles = StyleSheet.create({
   emptyStateText: {
     fontSize: 16,
     color: '#666',
-    marginBottom: 15
-  },
-  emptyStateButton: {
-    backgroundColor: '#1A1A6E',
-    padding: 10,
-    borderRadius: 8
-  },
-  emptyStateButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: 'bold'
+    textAlign: 'center'
   },
   turnoCard: {
     backgroundColor: '#f8f9fa',
@@ -331,15 +388,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8
   },
-  turnoDoctor: {
+  turnoPaciente: {
     fontSize: 16,
     fontWeight: 'bold',
     color: '#1A1A6E'
   },
-  turnoEspecialidad: {
+  turnoTelefono: {
+    fontSize: 14,
+    color: '#666'
+  },
+  turnoEmail: {
     fontSize: 14,
     color: '#666',
-    fontStyle: 'italic'
+    marginBottom: 5
   },
   turnoFecha: {
     fontSize: 14,
@@ -348,12 +409,28 @@ const styles = StyleSheet.create({
   },
   turnoActions: {
     flexDirection: 'row',
-    justifyContent: 'flex-end'
+    justifyContent: 'space-between'
+  },
+  confirmButton: {
+    backgroundColor: '#27ae60',
+    padding: 8,
+    borderRadius: 6,
+    flex: 1,
+    marginRight: 5,
+    alignItems: 'center'
+  },
+  confirmButtonText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold'
   },
   cancelButton: {
     backgroundColor: '#e74c3c',
     padding: 8,
-    borderRadius: 6
+    borderRadius: 6,
+    flex: 1,
+    marginLeft: 5,
+    alignItems: 'center'
   },
   cancelButtonText: {
     color: '#fff',
@@ -417,7 +494,12 @@ const styles = StyleSheet.create({
   },
   notificationText: {
     fontSize: 14,
-    color: '#666'
+    color: '#666',
+    marginBottom: 5
+  },
+  notificationContact: {
+    fontSize: 12,
+    color: '#999'
   },
   noNotifications: {
     textAlign: 'center',

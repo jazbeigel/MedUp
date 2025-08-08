@@ -11,7 +11,7 @@ import {
 } from 'react-native'
 import { supabase } from '../../utils/supabaseClient'
 
-export default function HomeScreen({ navigation }) {
+export default function PacienteHomeScreen({ navigation }) {
   const [user, setUser] = useState(null)
   const [turnos, setTurnos] = useState([])
   const [profesionales, setProfesionales] = useState([])
@@ -46,8 +46,23 @@ export default function HomeScreen({ navigation }) {
     try {
       if (!user) return
       
-      const response = await fetch(`http://localhost:3000/turnos/paciente/${user.id}`)
-      const data = await response.json()
+      const { data, error } = await supabase
+        .from('turnos')
+        .select(`
+          *,
+          profesionales:profesional_id (
+            nombre_completo,
+            especialidad
+          )
+        `)
+        .eq('paciente_id', user.id)
+        .order('fecha_hora', { ascending: true })
+      
+      if (error) {
+        console.error('Error cargando turnos:', error)
+        return
+      }
+      
       setTurnos(data)
     } catch (error) {
       console.error('Error cargando turnos:', error)
@@ -56,8 +71,16 @@ export default function HomeScreen({ navigation }) {
 
   const loadProfesionales = async () => {
     try {
-      const response = await fetch('http://localhost:3000/profesionales')
-      const data = await response.json()
+      const { data, error } = await supabase
+        .from('profesionales')
+        .select('*')
+        .order('nombre_completo')
+      
+      if (error) {
+        console.error('Error cargando profesionales:', error)
+        return
+      }
+      
       setProfesionales(data)
     } catch (error) {
       console.error('Error cargando profesionales:', error)
@@ -97,16 +120,18 @@ export default function HomeScreen({ navigation }) {
           text: 'Sí',
           onPress: async () => {
             try {
-              const response = await fetch(`http://localhost:3000/turnos/${turnoId}`, {
-                method: 'DELETE'
-              })
+              const { error } = await supabase
+                .from('turnos')
+                .delete()
+                .eq('id', turnoId)
               
-              if (response.ok) {
-                Alert.alert('Éxito', 'Turno cancelado exitosamente')
-                loadTurnos()
-              } else {
+              if (error) {
                 Alert.alert('Error', 'No se pudo cancelar el turno')
+                return
               }
+              
+              Alert.alert('Éxito', 'Turno cancelado exitosamente')
+              loadTurnos()
             } catch (error) {
               console.error('Error cancelando turno:', error)
               Alert.alert('Error', 'Ocurrió un error al cancelar el turno')
