@@ -71,7 +71,25 @@ const especialidades = [
 
 async function populateSpecialties() {
   try {
-    console.log('Iniciando población de especialidades...')
+    console.log('🚀 Iniciando población de especialidades...')
+    
+    // Primero verificar si la tabla existe y su estructura
+    console.log('📋 Verificando estructura de la tabla...')
+    const { data: tableInfo, error: tableError } = await supabase
+      .from('especialidades')
+      .select('*')
+      .limit(1)
+    
+    if (tableError) {
+      console.error('❌ Error accediendo a la tabla especialidades:', tableError)
+      console.log('💡 Posibles soluciones:')
+      console.log('   1. Verificar que la tabla "especialidades" existe en Supabase')
+      console.log('   2. Verificar que las políticas de seguridad permiten inserción')
+      console.log('   3. Verificar las credenciales de Supabase')
+      return
+    }
+    
+    console.log('✅ Tabla especialidades encontrada')
     
     // Verificar si ya existen especialidades
     const { data: existingSpecialties, error: checkError } = await supabase
@@ -84,8 +102,8 @@ async function populateSpecialties() {
     }
     
     if (existingSpecialties && existingSpecialties.length > 0) {
-      console.log('ℹ Ya existen especialidades en la base de datos')
-      console.log(` Total de especialidades existentes: ${existingSpecialties.length}`)
+      console.log('ℹ️ Ya existen especialidades en la base de datos')
+      console.log(`📊 Total de especialidades existentes: ${existingSpecialties.length}`)
       return
     }
     
