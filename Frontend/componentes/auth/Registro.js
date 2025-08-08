@@ -13,6 +13,7 @@ import {
   Modal
 } from 'react-native'
 import { supabase } from '../../utils/supabaseClient'
+import { ENDPOINTS } from '../../utils/config'
 
 export default function Register({ navigation }) {
   const [email, setEmail] = useState('')
@@ -42,20 +43,38 @@ export default function Register({ navigation }) {
 
   const loadEspecialidades = async () => {
     try {
-      const { data, error } = await supabase
-        .from('especialidades')
-        .select('*')
-        .order('nombre')
-      
-      if (error) {
-        console.error('Error cargando especialidades:', error)
-        return
+      // Intentar cargar desde el backend primero
+      const response = await fetch(ENDPOINTS.ESPECIALIDADES)
+      if (!response.ok) {
+        throw new Error('Error al cargar especialidades desde el backend')
       }
+      const data = await response.json()
       
       setEspecialidades(data)
       setFilteredEspecialidades(data)
+      console.log('Especialidades cargadas desde backend:', data.length)
     } catch (error) {
-      console.error('Error cargando especialidades:', error)
+      console.error('Error cargando especialidades desde backend:', error)
+      // Fallback: intentar cargar desde Supabase si el backend falla
+      try {
+        const { data, error } = await supabase
+          .from('especialidades')
+          .select('*')
+          .order('nombre')
+        
+        if (error) {
+          console.error('Error cargando especialidades desde Supabase:', error)
+          setError('No se pudieron cargar las especialidades. Intentalo de nuevo.')
+          return
+        }
+        
+        setEspecialidades(data)
+        setFilteredEspecialidades(data)
+        console.log('Especialidades cargadas desde Supabase:', data.length)
+      } catch (supabaseError) {
+        console.error('Error cargando especialidades desde Supabase:', supabaseError)
+        setError('No se pudieron cargar las especialidades. Verificá tu conexión.')
+      }
     }
   }
 
@@ -103,63 +122,56 @@ export default function Register({ navigation }) {
     setLoading(true)
 
     try {
-      // Primero crear el usuario en Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      // Usar el backend para el registro
+      const registerData = {
         email,
-        password
+        password,
+        nombre_completo: nombreCompleto,
+        telefono,
+        tipo_usuario: tipoUsuario,
+        ...(tipoUsuario === 'paciente' && {
+          fecha_nacimiento,
+          dni,
+          direccion
+        }),
+        ...(tipoUsuario === 'profesional' && {
+          matricula,
+          especialidad,
+          id_especialidad: idEspecialidad
+        })
+      }
+
+      console.log('Enviando datos de registro:', registerData)
+
+      const response = await fetch(ENDPOINTS.REGISTER, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(registerData)
       })
 
-      if (authError) {
-        setError(authError.message)
+      const result = await response.json()
+      console.log('Respuesta del backend:', result)
+
+      if (!response.ok) {
+        setError(result.error || 'Error en el registro')
         return
       }
 
-      if (authData.user) {
-        // Preparar los datos del usuario según el tipo
-        const userData = {
-          id: authData.user.id,
-          email,
-          nombre_completo: nombreCompleto,
-          telefono,
-          ...(tipoUsuario === 'paciente' && {
-            fecha_nacimiento,
-            dni,
-            direccion
-          }),
-          ...(tipoUsuario === 'profesional' && {
-            matricula,
-            especialidad,
-            id_especialidad: idEspecialidad
-          })
-        }
-
-        // Insertar en la tabla correspondiente
-        const { data: insertData, error: insertError } = await supabase
-          .from(tipoUsuario === 'paciente' ? 'pacientes' : 'profesionales')
-          .insert([userData])
-          .select()
-
-        if (insertError) {
-          setError(insertError.message)
-          return
-        }
-
-        Alert.alert(
-          '¡Registro Exitoso!',
-          'Tu cuenta ha sido creada correctamente. Ya podés iniciar sesión.',
-          [
-            {
-              text: 'OK',
-              onPress: () => navigation.replace('Login')
-            }
-          ]
-        )
-      } else {
-        setError('Error en el registro')
-      }
+      Alert.alert(
+        '¡Registro Exitoso!',
+        'Tu cuenta ha sido creada correctamente. Ya podés iniciar sesión.',
+        [
+          {
+            text: 'OK',
+            onPress: () => navigation.replace('Login')
+          }
+        ]
+      )
     } catch (err) {
       console.error('Error en registro:', err)
-      setError('Ocurrió un error inesperado. Intentalo de nuevo.')
+      setError('Ocurrió un error inesperado. Verificá que el backend esté funcionando.')
     } finally {
       setLoading(false)
     }

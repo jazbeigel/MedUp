@@ -1,8 +1,13 @@
-import { PrismaClient } from "@prisma/client";
+import { createClient } from '@supabase/supabase-js';
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { config } from "../config.js";
 
-const prisma = new PrismaClient();
+// Crear cliente de Supabase
+const supabase = createClient(
+  'https://qhtjlctnsoajgouinjaq.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFodGpsY3Ruc29hamdvdWluamFxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkwMzU2NjMsImV4cCI6MjA2NDYxMTY2M30.AVpXetLCSZLG_hg0W4wSJGVvXuwaIiwo983QZZAshI8'
+);
 
 // Middleware para validar datos de registro
 export const validateRegistrationData = (req, res, next) => {
@@ -36,66 +41,113 @@ export const registerUser = async (req, res) => {
       id_especialidad
     } = req.body;
 
-    // Verificar si el email ya existe
-    const existingUser = await prisma.usuarios.findFirst({
-      where: {
-        OR: [
-          { pacientes: { some: { dni } } },
-          { profesionales: { some: { matricula } } }
-        ]
-      }
-    });
+    console.log('Registrando usuario:', { email, tipo_usuario, dni, matricula });
 
-    if (existingUser) {
-      return res.status(409).json({ error: "Usuario ya existe con este DNI o email" });
+    // Verificar si el DNI ya existe para pacientes
+    if (tipo_usuario === "paciente") {
+      const { data: existingPaciente, error: pacienteError } = await supabase
+        .from('pacientes')
+        .select('*')
+        .eq('dni', dni)
+        .single();
+
+      if (pacienteError && pacienteError.code !== 'PGRST116') {
+        console.error('Error verificando DNI:', pacienteError);
+        return res.status(500).json({ error: "Error verificando DNI" });
+      }
+
+      if (existingPaciente) {
+        return res.status(409).json({ error: "Ya existe un paciente con este DNI" });
+      }
     }
 
-    // Hash de contraseña
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Verificar si la matrícula ya existe para profesionales
+    if (tipo_usuario === "profesional") {
+      const { data: existingProfesional, error: profesionalError } = await supabase
+        .from('profesionales')
+        .select('*')
+        .eq('matricula', matricula)
+        .single();
 
-    // Crear usuario base
-    const newUser = await prisma.usuarios.create({
-      data: {}
+      if (profesionalError && profesionalError.code !== 'PGRST116') {
+        console.error('Error verificando matrícula:', profesionalError);
+        return res.status(500).json({ error: "Error verificando matrícula" });
+      }
+
+      if (existingProfesional) {
+        return res.status(409).json({ error: "Ya existe un profesional con esta matrícula" });
+      }
+    }
+
+    // Crear usuario en Supabase Auth
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email,
+      password
     });
 
+    if (authError) {
+      console.error('Error en autenticación:', authError);
+      return res.status(400).json({ error: authError.message });
+    }
+
+    if (!authData.user) {
+      return res.status(400).json({ error: "Error creando usuario" });
+    }
+
+    // Insertar en la tabla correspondiente
     let userData;
-    
+    const userRecord = {
+      usuario_id: authData.user.id,
+      nombre_completo,
+      telefono
+    };
+
     if (tipo_usuario === "paciente") {
-      userData = await prisma.pacientes.create({
-        data: {
-          usuario_id: newUser.id,
-          nombre_completo,
-          fecha_nacimiento: new Date(fecha_nacimiento),
+      const { data, error } = await supabase
+        .from('pacientes')
+        .insert([{
+          ...userRecord,
+          fecha_nacimiento,
           dni,
-          direccion,
-          telefono,
-          email,
-          password_hash: hashedPassword
-        }
-      });
+          direccion
+        }])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error insertando paciente:', error);
+        return res.status(500).json({ error: "Error creando paciente" });
+      }
+
+      userData = data;
     } else if (tipo_usuario === "profesional") {
       if (!matricula || !especialidad || !id_especialidad) {
         return res.status(400).json({ error: "Profesionales requieren matrícula, especialidad e ID de especialidad" });
       }
 
-      userData = await prisma.profesionales.create({
-        data: {
-          usuario_id: newUser.id,
-          nombre_completo,
+      const { data, error } = await supabase
+        .from('profesionales')
+        .insert([{
+          ...userRecord,
           matricula,
           especialidad,
-          telefono,
-          id_especialidad,
-          email,
-          password_hash: hashedPassword
-        }
-      });
+          id_especialidad
+        }])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error insertando profesional:', error);
+        return res.status(500).json({ error: "Error creando profesional" });
+      }
+
+      userData = data;
     }
 
     // Generar token JWT
     const token = jwt.sign(
-      { userId: newUser.id, tipo_usuario },
-      process.env.JWT_SECRET || "your-secret-key",
+      { userId: authData.user.id, tipo_usuario },
+      config.JWT_SECRET,
       { expiresIn: "24h" }
     );
 
@@ -103,7 +155,7 @@ export const registerUser = async (req, res) => {
       message: "Usuario registrado exitosamente",
       token,
       user: {
-        id: newUser.id,
+        id: authData.user.id,
         tipo_usuario,
         ...userData
       }
@@ -124,32 +176,52 @@ export const loginUser = async (req, res) => {
       return res.status(400).json({ error: "Email, contraseña y tipo de usuario son requeridos" });
     }
 
+    // Autenticar con Supabase
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+
+    if (authError) {
+      return res.status(401).json({ error: "Credenciales inválidas" });
+    }
+
+    // Buscar usuario en la tabla correspondiente
     let user;
     
     if (tipo_usuario === "paciente") {
-      user = await prisma.pacientes.findFirst({
-        where: { email }
-      });
+      const { data, error } = await supabase
+        .from('pacientes')
+        .select('*')
+        .eq('usuario_id', authData.user.id)
+        .single();
+
+      if (error) {
+        return res.status(401).json({ error: "Usuario no encontrado" });
+      }
+
+      user = data;
     } else if (tipo_usuario === "profesional") {
-      user = await prisma.profesionales.findFirst({
-        where: { email }
-      });
+      const { data, error } = await supabase
+        .from('profesionales')
+        .select('*')
+        .eq('usuario_id', authData.user.id)
+        .single();
+
+      if (error) {
+        return res.status(401).json({ error: "Usuario no encontrado" });
+      }
+
+      user = data;
     }
 
     if (!user) {
-      return res.status(401).json({ error: "Credenciales inválidas" });
-    }
-
-    // Verificar contraseña
-    const isValidPassword = await bcrypt.compare(password, user.password_hash || password);
-
-    if (!isValidPassword) {
-      return res.status(401).json({ error: "Credenciales inválidas" });
+      return res.status(401).json({ error: "Usuario no encontrado" });
     }
 
     const token = jwt.sign(
-      { userId: user.id, tipo_usuario },
-      process.env.JWT_SECRET || "your-secret-key",
+      { userId: authData.user.id, tipo_usuario },
+      config.JWT_SECRET,
       { expiresIn: "24h" }
     );
 
@@ -157,7 +229,7 @@ export const loginUser = async (req, res) => {
       message: "Login exitoso",
       token,
       user: {
-        id: user.id,
+        id: authData.user.id,
         nombre_completo: user.nombre_completo,
         tipo_usuario
       }
