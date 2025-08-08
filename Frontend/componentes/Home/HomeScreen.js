@@ -118,6 +118,7 @@ export default function HomeScreen({ navigation }) {
   }
 
   return (
+<<<<<<< HEAD
     <ScrollView 
       style={styles.container}
       refreshControl={
@@ -130,6 +131,11 @@ export default function HomeScreen({ navigation }) {
         </Text>
         <Text style={styles.subtitle}>Tu panel de paciente</Text>
       </View>
+=======
+    <View style={styles.container}>
+      <Text style={styles.title}>Bienvenidooooo a MedUp</Text>
+      <Text style={styles.subtitle}>Tu app para gestión médica</Text>
+>>>>>>> d2c95594930ab4e4d845cc4c7752e221fadfcf1b
 
       {/* Sección de Acciones Rápidas */}
       <View style={styles.section}>
