@@ -58,6 +58,11 @@ export default function Login({ navigation }) {
       <TouchableOpacity onPress={() => navigation.replace('Welcome')}>
       <Text style={styles.link}>← Volver al inicio</Text>
       </TouchableOpacity>
+{/*       
+      <TouchableOpacity onPress={() => navigation.replace('Agendar Turno')}>
+      <Text style={styles.link}>agendar turno</Text>
+      </TouchableOpacity> */}
+
     </View>
   )
 }

@@ -39,6 +39,16 @@ export default function Register({ navigation }) {
 
     setLoading(true)
 
+    const pacientes = {
+      email: email,
+      password: password,
+      fecha_nacimiento: fecha_nacimiento,
+      nombreCompleto: nombreCompleto,
+      dni: dni,
+      direccion: direccion,
+      telefono: telefono,
+    }
+
     try {
       const { data, error: signUpError } = await supabase.auth.signUp({
         email,
@@ -109,9 +119,16 @@ export default function Register({ navigation }) {
           style={styles.input}
         />
         <TextInput
+          placeholder="Fecha de nacimiento"
+          value={fecha_nacimiento}
+          onChangeText={setFechaNacimiento}
+          style={styles.input}
+          />
+        <TextInput
           placeholder="Dirección"
           value={direccion}
           onChangeText={setDireccion}
+          keyboardType="date"
           style={styles.input}
         />
         <TextInput

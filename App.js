@@ -8,6 +8,7 @@ import HomeScreen from './Frontend/componentes/Home/HomeScreen'
 import InfoScreen from './Frontend/componentes/Home/InfoScreen'
 import ProfileScreen from './Frontend/componentes/Profile/ProfileScreen'
 import WelcomeScreen from './Frontend/componentes/Home/WelcomeScreen' 
+import AgendarTurno from './Frontend/componentes/Home/AgendarTurno'
 
 const Stack = createNativeStackNavigator()
 
@@ -21,6 +22,7 @@ export default function App() {
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="Info" component={InfoScreen} />
         <Stack.Screen name="Profile" component={ProfileScreen} />
+        <Stack.Screen name="Agendar Turno" component={AgendarTurno}/>
       </Stack.Navigator>
     </NavigationContainer>
   )
