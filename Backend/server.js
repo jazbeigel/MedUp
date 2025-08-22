@@ -5,9 +5,9 @@
     // Routers
 
     import EspecialidadesController   from "./controllers/especialidades-controller.js"
+    import PacientessController     from "./controllers/pacientes-controller.js"
     /*
     import MedicamentosController     from "./controllers/medicamentos-controller.js"
-    import PacientessController     from "./controllers/pacientes-controller.js"
     import RecetasController     from "./controllers/recetas-controller.js"
     import ReseñasController     from "./controllers/reseñas-controller.js"
     import SolicitudesController     from "./controllers/solicitudes-controller.js"
@@ -26,9 +26,9 @@
     // Endpoints (todos los Routers)
 
     app.use("/api/especialidades", EspecialidadesController);
+    app.use("/api/pacientes", PacientessController);
     /*
     app.use("/api/medicamentos" , MedicamentosController);
-    app.use("/api/pacientes", PacientessController);
     app.use("/api/recetas", RecetasController);
     app.use("/api/reseñas" , ReseñasController);
     app.use("/api/solicitudes", SolicitudesController);
