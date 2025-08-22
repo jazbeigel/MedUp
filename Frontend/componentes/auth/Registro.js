@@ -9,7 +9,6 @@ import {
   KeyboardAvoidingView,
   Platform
 } from 'react-native'
-import { supabase } from '../../utils/supabaseClient'
 
 export default function Register({ navigation }) {
   const [userType, setUserType] = useState('') // 'paciente' o 'doctor'
@@ -56,64 +55,49 @@ export default function Register({ navigation }) {
 
     setLoading(true)
 
-<<<<<<< HEAD
-    const userData = {
-      email,
-      password,
-      fecha_nacimiento,
-      nombreCompleto,
-      dni,
-      direccion,
-      telefono,
-    }
-
-=======
->>>>>>> 4317bb1129271465a4e0d712fa8f72e8c835cfa7
     try {
-      const response = await fetch('http://localhost:3000/api/profesionales', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json',
-      },
-        body: JSON.stringify(userData),
-      });
+      // Datos que se mandan al backend
+      const userData = userType === 'paciente'
+        ? {
+            tipo: 'paciente',
+            nombre_completo: nombreCompleto,
+            email,
+            password,
+            dni,
+            fecha_nacimiento,
+            direccion,
+            telefono,
+          }
+        : {
+            tipo: 'profecional',
+            nombre_completo: nombreCompleto,
+            email,
+            password,
+            matricula,
+            especialidad,
+          }
 
-      const data = await response.json()
+      const response = await fetch('http://localhost:3000/api/profesionales', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+      })
 
       if (!response.ok) {
-        setError(data.message || 'Error al registrar el profesional')
-        setLoading(false)
-        return
+        throw new Error('Error al registrar usuario')
       }
 
-<<<<<<< HEAD
-      alert('Registro exitoso. Ahora podés iniciar sesión.')
-=======
-      const userId = data.user?.id
-      if (!userId) {
-        setError('No se pudo obtener el ID del usuario.')
-        setLoading(false)
-        return
-      }
+      const result = await response.json()
+      console.log('Usuario registrado:', result)
 
-      const table = userType === 'paciente' ? 'pacientes' : 'doctores'
-      const insertData = userType === 'paciente'
-        ? { usuario_id: userId, nombre_completo: nombreCompleto, dni, fecha_nacimiento, direccion, telefono }
-        : { usuario_id: userId, nombre_completo: nombreCompleto, matricula, especialidad }
-
-      const { error: insertError } = await supabase.from(table).insert([insertData])
-
-      if (insertError) {
-        setError(insertError.message)
-        setLoading(false)
-        return
-      }
-
-      alert('Registro exitoso. Revisá tu email para confirmar tu cuenta.')
->>>>>>> 4317bb1129271465a4e0d712fa8f72e8c835cfa7
+      alert('Registro exitoso 🎉')
       navigation.replace('Login')
 
     } catch (err) {
-      setError('Ocurrió un error inesperado. Intentalo de nuevo.')
+      console.error(err)
+      setError('Ocurrió un error al registrar. Intentalo de nuevo.')
     } finally {
       setLoading(false)
     }
@@ -283,8 +267,9 @@ const styles = StyleSheet.create({
     textAlign:'center'
   },
   link: {
+    alignSelf: 'flex-start',
     color:'#1A1A6E',
-    marginTop:15,
+    marginTop:50,
     textDecorationLine:'underline',
     textAlign:'center'
   }
