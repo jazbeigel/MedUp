@@ -10,19 +10,32 @@ export default function Login({ navigation }) {
 
   const handleLogin = async () => {
     setLoading(true)
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-    setLoading(false)
+    setError(null) //no se siguen mostrando errores anteriores
 
-    if (error) {
-      setError(error.message)
+    try{
+      const response = await fetch('',{
+      method: 'POST',
+      Headers: {},
+      body: JSON.stringify({
+        email,
+        password,
+      }),
+  })
+
+    const data = await response.json()
+  
+    if (response.ok) {
+      // redirige a la home, pero todavia no esta hecha
+      navigation.replace('')
     } else {
-      setError(null)
-      navigation.replace('Home')
+      setError(data.message || 'Error desconocido')
     }
+  } catch (err) {
+    setError('Error de conexión, intenta nuevamente')
+  } finally {
+    setLoading(false)
   }
+}
 
   return (
     <View style={styles.container}>

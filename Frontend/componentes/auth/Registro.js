@@ -39,54 +39,35 @@ export default function Register({ navigation }) {
 
     setLoading(true)
 
-    const pacientes = {
-      email: email,
-      password: password,
-      fecha_nacimiento: fecha_nacimiento,
-      nombreCompleto: nombreCompleto,
-      dni: dni,
-      direccion: direccion,
-      telefono: telefono,
+    const userData = {
+      email,
+      password,
+      fecha_nacimiento,
+      nombreCompleto,
+      dni,
+      direccion,
+      telefono,
     }
 
     try {
-      const { data, error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-      })
+      const response = await fetch('http://localhost:3000/api/profesionales', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json',
+      },
+        body: JSON.stringify(userData),
+      });
 
-      if (signUpError) {
-        setError(signUpError.message)
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.message || 'Error al registrar el profesional')
         setLoading(false)
         return
       }
 
-      const userId = data.user?.id
-      if (!userId) {
-        setError('No se pudo obtener el ID del usuario.')
-        setLoading(false)
-        return
-      }
-
-      const { error: insertError } = await supabase.from('pacientes').insert([
-        {
-          usuario_id: userId,
-          nombre_completo: nombreCompleto,
-          fecha_nacimiento,
-          dni,
-          direccion,
-          telefono,
-        },
-      ])
-
-      if (insertError) {
-        setError(insertError.message)
-        setLoading(false)
-        return
-      }
-
-      alert('Registro exitoso. Revisá tu email para confirmar tu cuenta.')
+      alert('Registro exitoso. Ahora podés iniciar sesión.')
       navigation.replace('Login')
+
     } catch (err) {
       setError('Ocurrió un error inesperado. Intentalo de nuevo.')
     } finally {
