@@ -1,11 +1,12 @@
 import fs from 'fs';
+import path from 'path';
 
 class LogHelper {
     constructor() {
-        this.filePath               = process.env.LOG_FILE_PATH;
-        this.fileName               = process.env.LOG_FILE_NAME;
-        this.logToFileEnabled       = process.env.LOG_TO_FILE_ENABLED.toLowerCase() === 'true';
-        this.logToConsoleEnabled    = process.env.LOG_TO_CONSOLE_ENABLED.toLowerCase() === 'true';
+        this.filePath               = process.env.LOG_FILE_PATH || './logs';
+        this.fileName               = process.env.LOG_FILE_NAME || '';
+        this.logToFileEnabled       = (process.env.LOG_TO_FILE_ENABLED || 'false').toLowerCase() === 'true';
+        this.logToConsoleEnabled    = (process.env.LOG_TO_CONSOLE_ENABLED || 'true').toLowerCase() === 'true';
     }
 
     /**
@@ -18,6 +19,9 @@ class LogHelper {
         const fullFileName   = this.getFullFileName();
 
         if (this.logToFileEnabled) {
+            // Asegurarse de que la carpeta de logs exista
+            fs.mkdirSync(this.filePath, { recursive: true });
+
             // Escribir el error en el archivo de registro
             fs.appendFile(fullFileName, formattedError + '\n', (err) => {
                 if (err) {
@@ -44,15 +48,13 @@ class LogHelper {
 
     getFullFileName = () => {
         // Obtiene la fecha actual en formato YYYY-MM-DD
-        let returnValue = this.filePath; 
         let onlyFileName;
         if (this.fileName == "") {
             onlyFileName = `${this.getCurrentDate()}.log`;
         } else {
             onlyFileName = `${this.getCurrentDate()}-${this.fileName}`;
         }
-        returnValue = `${this.filePath}${onlyFileName}`;
-        return returnValue;
+        return path.join(this.filePath, onlyFileName);
     }
 
     getCurrentDate = () => {
