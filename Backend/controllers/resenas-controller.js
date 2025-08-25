@@ -6,28 +6,34 @@ const router = Router();
 const currentService = new ResenasService();
 
 router.get('', async (req, res) => {
-    console.log(`ResenasController.get`);
+  try {
     const returnArray = await currentService.getAllAsync();
-    if (returnArray != null){
-        res.status(StatusCodes.OK).json(returnArray);
+    if (returnArray != null) {
+      res.status(StatusCodes.OK).json(returnArray);
     } else {
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(`Error interno.`);
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send('Error interno.');
     }
+  } catch (error) {
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send('Error interno.');
+  }
 });
 
 router.get('/:id', async (req, res) => {
-    let id = req.params.id;
-
+  const id = req.params.id;
+  try {
     const returnEntity = await currentService.getByIdAsync(id);
-
-    if (returnEntity!=null){
-        res.status(StatusCodes.OK).json(returnEntity);
+    if (returnEntity != null) {
+      res.status(StatusCodes.OK).json(returnEntity);
     } else {
-        res.status(StatusCodes.NOT_FOUND).send(`No se encontro la entidad (id:${id}).`);
+      res.status(StatusCodes.NOT_FOUND).send(`No se encontro la entidad (id:${id}).`);
     }
+  } catch (error) {
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send('Error interno.');
+  }
 });
 
 router.post('', async (req, res) => {
+
     let entity = req.body;
 
     // Validar que la calificación esté dentro del rango permitido por la BD
@@ -43,8 +49,11 @@ router.post('', async (req, res) => {
     if (newId > 0) {
         res.status(StatusCodes.CREATED).json(newId);
     } else {
-        res.status(StatusCodes.BAD_REQUEST).json(null);
+      res.status(StatusCodes.BAD_REQUEST).json(null);
     }
+  } catch (error) {
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send('Error interno.');
+  }
 });
 
 export default router;
