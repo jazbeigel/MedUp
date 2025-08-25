@@ -9,10 +9,9 @@
     /*
     import MedicamentosController     from "./controllers/medicamentos-controller.js"
     import RecetasController     from "./controllers/recetas-controller.js"
-    import ReseñasController     from "./controllers/reseñas-controller.js"
     import SolicitudesController     from "./controllers/solicitudes-controller.js"
     */
-
+    import ReseñasController     from "./controllers/resenas-controller.js"
     import TurnosController     from "./controllers/turnos-controller.js"
     import ProfesionalesController     from "./controllers/profesionales-controller.js"
 
@@ -30,9 +29,9 @@
     /*
     app.use("/api/medicamentos" , MedicamentosController);
     app.use("/api/recetas", RecetasController);
-    app.use("/api/reseñas" , ReseñasController);
     app.use("/api/solicitudes", SolicitudesController);
     */
+    app.use("/api/resenas" , ReseñasController);
     app.use("/api/turnos" , TurnosController);
     app.use("/api/profesionales" , ProfesionalesController);
 

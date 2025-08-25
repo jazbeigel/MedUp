@@ -1,0 +1,81 @@
+-- WARNING: This schema is for context only and is not meant to be run.
+-- Table order and constraints may not be valid for execution.
+
+CREATE TABLE public.especialidades (
+  id integer NOT NULL DEFAULT nextval('especialidades_id_seq'::regclass),
+  nombre text NOT NULL,
+  CONSTRAINT especialidades_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.medicamentos (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  receta_id bigint NOT NULL,
+  nombre text NOT NULL,
+  dosis text NOT NULL,
+  frecuencia text NOT NULL,
+  duracion text NOT NULL,
+  CONSTRAINT medicamentos_pkey PRIMARY KEY (id),
+  CONSTRAINT medicamentos_receta_id_fkey FOREIGN KEY (receta_id) REFERENCES public.recetas(id)
+);
+CREATE TABLE public.pacientes (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  usuario_id uuid,
+  nombre_completo text NOT NULL,
+  fecha_nacimiento date NOT NULL,
+  dni text NOT NULL,
+  direccion text NOT NULL,
+  telefono text NOT NULL,
+  CONSTRAINT pacientes_pkey PRIMARY KEY (id),
+  CONSTRAINT pacientes_usuario_id_fkey FOREIGN KEY (usuario_id) REFERENCES auth.users(id)
+);
+CREATE TABLE public.profesionales (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  nombre_completo text NOT NULL,
+  matricula text NOT NULL,
+  telefono text NOT NULL,
+  id_especialidad integer,
+  email text,
+  CONSTRAINT profesionales_pkey PRIMARY KEY (id),
+  CONSTRAINT fk_especialidad FOREIGN KEY (id_especialidad) REFERENCES public.especialidades(id)
+);
+CREATE TABLE public.recetas (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  paciente_id bigint NOT NULL,
+  doctor_id bigint NOT NULL,
+  creada_el timestamp with time zone DEFAULT now(),
+  diagnostico text,
+  observaciones text,
+  CONSTRAINT recetas_pkey PRIMARY KEY (id),
+  CONSTRAINT recetas_paciente_id_fkey FOREIGN KEY (paciente_id) REFERENCES public.pacientes(id),
+  CONSTRAINT recetas_doctor_id_fkey FOREIGN KEY (doctor_id) REFERENCES public.profesionales(id)
+);
+CREATE TABLE public.resenas (
+  id integer NOT NULL DEFAULT nextval('resenas_id_seq'::regclass),
+  calificacion integer CHECK (calificacion >= 1 AND calificacion <= 5),
+  comentario text,
+  fecha timestamp without time zone DEFAULT now(),
+  id_turno bigint,
+  CONSTRAINT resenas_pkey PRIMARY KEY (id),
+  CONSTRAINT resenas_id_turno_fkey FOREIGN KEY (id_turno) REFERENCES public.turnos(id)
+);
+CREATE TABLE public.solicitudes (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  paciente_id bigint NOT NULL,
+  receta_id bigint NOT NULL,
+  estado text NOT NULL DEFAULT 'pendiente'::text CHECK (estado = ANY (ARRAY['pendiente'::text, 'en_proceso'::text, 'entregado'::text, 'cancelado'::text])),
+  creado_el timestamp with time zone DEFAULT now(),
+  direccion_entrega text NOT NULL,
+  fecha_necesaria date,
+  CONSTRAINT solicitudes_pkey PRIMARY KEY (id),
+  CONSTRAINT pedidos_receta_id_fkey FOREIGN KEY (receta_id) REFERENCES public.recetas(id),
+  CONSTRAINT pedidos_paciente_id_fkey FOREIGN KEY (paciente_id) REFERENCES public.pacientes(id)
+);
+CREATE TABLE public.turnos (
+  id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
+  paciente_id bigint,
+  profesional_id bigint,
+  fecha timestamp without time zone NOT NULL,
+  creado_el timestamp without time zone DEFAULT now(),
+  CONSTRAINT turnos_pkey PRIMARY KEY (id),
+  CONSTRAINT turnos_profesional_id_fkey FOREIGN KEY (profesional_id) REFERENCES public.profesionales(id),
+  CONSTRAINT turnos_paciente_id_fkey FOREIGN KEY (paciente_id) REFERENCES public.pacientes(id)
+);
