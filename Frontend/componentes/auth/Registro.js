@@ -32,6 +32,7 @@ export default function Register({ navigation }) {
 
   const handleRegister = async () => {
     setError(null)
+    
 
     if (!email || !password || !confirmPassword || !nombreCompleto) {
       setError('Por favor, completá todos los campos obligatorios.')
@@ -55,7 +56,10 @@ export default function Register({ navigation }) {
 
     setLoading(true)
 
+
+
     try {
+      
       // Datos que se mandan al backend
       const userData = userType === 'paciente'
         ? {
@@ -69,14 +73,14 @@ export default function Register({ navigation }) {
             telefono,
           }
         : {
-            tipo: 'profecional',
+            tipo: 'profesional',
             nombre_completo: nombreCompleto,
             email,
             password,
             matricula,
             especialidad,
           }
-
+         
       const response = await fetch('http://localhost:3000/api/profesionales', {
         method: 'POST',
         headers: {
@@ -84,7 +88,7 @@ export default function Register({ navigation }) {
         },
         body: JSON.stringify(userData),
       })
-
+      console.log(response);
       if (!response.ok) {
         throw new Error('Error al registrar usuario')
       }
@@ -92,7 +96,7 @@ export default function Register({ navigation }) {
       const result = await response.json()
       console.log('Usuario registrado:', result)
 
-      alert('Registro exitoso 🎉')
+      alert('Registro exitoso')
       navigation.replace('Login')
 
     } catch (err) {

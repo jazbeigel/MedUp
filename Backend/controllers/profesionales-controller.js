@@ -28,6 +28,7 @@ router.get('/:id', async (req, res) => {
 });
 
 router.post('', async (req, res) => {
+    console.log("entro");
     let entity = req.body;
     const newId = await currentService.createAsync(entity);
     if (newId > 0 ){

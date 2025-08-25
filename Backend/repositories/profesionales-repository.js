@@ -62,21 +62,21 @@ VALUES
             const sql = ` INSERT INTO profesionales (
                             nombre_completo         , 
                             matricula               , 
-                            especialidad            , 
+                 
                             telefono                , 
                             id_especialidad
                         ) VALUES (
                             $1, 
                             $2, 
                             $3, 
-                            $4, 
-                            $5
+                            $4
+                     
                         ) RETURNING id`;
             const values =  [   entity?.nombre_completo         ?? '', 
                                 entity?.matricula               ?? '', 
-                                entity?.especialidad            ?? 'Eliminar', 
                                 entity?.telefono                ?? '', 
-                                entity?.id_especialidad         ?? null
+                                entity?.id_
+                                         ?? null
                             ];
             const resultPg = await this.getDBPool().query(sql, values);
             newId = resultPg.rows[0].id;

@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native'
 import { supabase } from '../../utils/supabaseClient'
 
+
 export default function Login({ navigation }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -72,6 +73,7 @@ export default function Login({ navigation }) {
         <TouchableOpacity onPress={() => navigation.replace('Welcome')}>
           <Text style={styles.link}>← Volver al inicio</Text>
         </TouchableOpacity>
+        
       </View>
     </View>
   )
