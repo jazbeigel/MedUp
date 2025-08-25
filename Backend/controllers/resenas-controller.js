@@ -33,11 +33,21 @@ router.get('/:id', async (req, res) => {
 });
 
 router.post('', async (req, res) => {
-  try {
-    const entity = req.body;
+
+    let entity = req.body;
+
+    // Validar que la calificación esté dentro del rango permitido por la BD
+    const calificacion = Number(entity?.calificacion);
+    if (isNaN(calificacion) || calificacion < 1 || calificacion > 5) {
+        res
+            .status(StatusCodes.BAD_REQUEST)
+            .send('La calificacion debe estar entre 1 y 5.');
+        return;
+    }
+
     const newId = await currentService.createAsync(entity);
     if (newId > 0) {
-      res.status(StatusCodes.CREATED).json(newId);
+        res.status(StatusCodes.CREATED).json(newId);
     } else {
       res.status(StatusCodes.BAD_REQUEST).json(null);
     }
