@@ -10,6 +10,7 @@ import {
   Platform
 } from 'react-native'
 import { Picker } from '@react-native-picker/picker'
+import { supabase } from '../../utils/supabaseClient'
 
 export default function Register({ navigation }) {
   const [userType, setUserType] = useState('') // 'paciente' o 'doctor'
@@ -73,52 +74,54 @@ export default function Register({ navigation }) {
 
     setLoading(true)
 
-
-
     try {
-      
-      // Datos que se mandan al backend
-      const userData = userType === 'paciente'
-        ? {
-            tipo: 'paciente',
-            nombre_completo: nombreCompleto,
-            email,
-            password,
-            dni,
-            fecha_nacimiento,
-            direccion,
-            telefono,
-          }
-        : {
-            tipo: 'profesional',
-            nombre_completo: nombreCompleto,
-            email,
-            password,
-            matricula,
-            especialidad,
-          }
-         
-      const response = await fetch('http://localhost:3000/api/profesionales', {
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+      })
+      if (authError) throw authError
+
+      const usuarioId = authData.user?.id
+
+      const userData =
+        userType === 'paciente'
+          ? {
+              usuario_id: usuarioId,
+              nombre_completo: nombreCompleto,
+              fecha_nacimiento,
+              dni,
+              direccion,
+              telefono,
+            }
+          : {
+              usuario_id: usuarioId,
+              nombre_completo: nombreCompleto,
+              matricula,
+              id_especialidad: especialidad,
+              telefono,
+            }
+
+      const endpoint =
+        userType === 'paciente'
+          ? 'http://localhost:3000/api/pacientes'
+          : 'http://localhost:3000/api/profesionales'
+
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(userData),
       })
-      console.log(response);
       if (!response.ok) {
         throw new Error('Error al registrar usuario')
       }
 
-      const result = await response.json()
-      console.log('Usuario registrado:', result)
-
       alert('Registro exitoso')
       navigation.replace('Login')
-
     } catch (err) {
       console.error(err)
-      setError('Ocurrió un error al registrar. Intentalo de nuevo.')
+      setError(err.message || 'Ocurrió un error al registrar. Intentalo de nuevo.')
     } finally {
       setLoading(false)
     }
@@ -186,7 +189,7 @@ export default function Register({ navigation }) {
             >
               <Picker.Item label="Seleccioná una especialidad" value="" />
               {especialidades.map((esp) => (
-                <Picker.Item key={esp.id} label={esp.nombre} value={esp.nombre} />
+              <Picker.Item key={esp.id} label={esp.nombre} value={esp.id} />
               ))}
             </Picker>
           </>
