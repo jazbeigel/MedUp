@@ -2,9 +2,7 @@ import React from 'react'
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
 import { supabase } from '../../utils/supabaseClient'
 
-export default function HomeScreen({ route, navigation }) {
-  const { user, userType } = route.params || {}
-
+export default function HomeScreen({ navigation }) {
   const handleLogout = async () => {
     await supabase.auth.signOut()
     navigation.replace('Login')
@@ -12,18 +10,18 @@ export default function HomeScreen({ route, navigation }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Bienvenido {user?.nombre_completo || ''}</Text>
+      <Text style={styles.title}>Bienvenido a MedUp</Text>
       <Text style={styles.subtitle}>Tu app para gestión médica</Text>
 
       <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Info')}>
         <Text style={styles.buttonText}>Información</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Profile', { user, userType })}>
+      <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Profile')}>
         <Text style={styles.buttonText}>Mi Perfil</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={[styles.button, { backgroundColor: '#e74c3c' }]} onPress={handleLogout}>
+      <TouchableOpacity style={[styles.button, {backgroundColor: '#e74c3c'}]} onPress={handleLogout}>
         <Text style={styles.buttonText}>Cerrar sesión</Text>
       </TouchableOpacity>
     </View>

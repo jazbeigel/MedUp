@@ -4,39 +4,23 @@ import { supabase } from '../../utils/supabaseClient'
 
 
 export default function Login({ navigation }) {
-  const [nombreUsuario, setnombreUsuario] = useState('')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
   const handleLogin = async () => {
     setLoading(true)
-    setError(null)
-
+    setError(null) // no se siguen mostrando errores anteriores
 
     try {
-      const { data, error: loginError } = await supabase.auth.signInWithPassword({
+      const { error: loginError } = await supabase.auth.signInWithPassword({
         email,
-        e04e7f96de45e9ced47362e365d9fc60cb4,
         password,
       })
       if (loginError) throw loginError
 
-      const userId = data.user?.id
-      let userType = 'paciente'
-      let profileRes = await fetch(`http://localhost:3000/api/pacientes/usuario/${userId}`)
-      let profile
-      if (profileRes.ok) {
-        profile = await profileRes.json()
-      } else {
-        profileRes = await fetch(`http://localhost:3000/api/profesionales/email/${encodeURIComponent(email)}`)
-        if (profileRes.ok) {
-          profile = await profileRes.json()
-          userType = 'doctor'
-        }
-      }
-
-      navigation.replace('Home', { user: profile, userType })
+      navigation.replace('Home')
     } catch (err) {
       setError(err.message || 'Error de conexión, intenta nuevamente')
     } finally {
@@ -50,10 +34,10 @@ export default function Login({ navigation }) {
         <Text style={styles.title}>Ingresar a MedUp</Text>
 
         <TextInput
-          placeholder="nombreUsuario"
-          value={nombreUsuario}
-          onChangeText={setnombreUsuario}
-          keyboardType="nombreUsuario-address"
+          placeholder="Email"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
           autoCapitalize="none"
           style={styles.input}
         />

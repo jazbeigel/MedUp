@@ -49,22 +49,6 @@ export default class PacientesRepository {
         return returnEntity;
     }
 
-    getByUsuarioIdAsync = async (usuarioId) => {
-        console.log(`PacientesRepository.getByUsuarioIdAsync(${usuarioId})`);
-        let returnEntity = null;
-        try {
-            const sql = `SELECT * FROM pacientes WHERE usuario_id=$1`;
-            const values = [usuarioId];
-            const resultPg = await this.getDBPool().query(sql, values);
-            if (resultPg.rows.length > 0) {
-                returnEntity = resultPg.rows[0];
-            }
-        } catch (error) {
-            LogHelper.logError(error);
-        }
-        return returnEntity;
-    }
-
     // Crear paciente
     createAsync = async (entity) => {
         console.log(`PacientesRepository.createAsync(${JSON.stringify(entity)})`);

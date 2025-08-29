@@ -1,8 +1,33 @@
-import React from 'react'
-import { View, Text, StyleSheet } from 'react-native'
+import React, { useEffect, useState } from 'react'
+import { View, Text, StyleSheet, ActivityIndicator } from 'react-native'
+import { supabase } from '../../utils/supabaseClient'
 
-export default function ProfileScreen({ route }) {
-  const { user, userType } = route.params || {}
+export default function ProfileScreen() {
+  const [user, setUser] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const getUser = async () => {
+      const currentUser = supabase.auth.getUser()
+      const { data, error } = await supabase.auth.getUser()
+
+      if (error) {
+        setUser(null)
+      } else {
+        setUser(data.user)
+      }
+      setLoading(false)
+    }
+    getUser()
+  }, [])
+
+  if (loading) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#1A1A6E" />
+      </View>
+    )
+  }
 
   if (!user) {
     return (
@@ -15,21 +40,11 @@ export default function ProfileScreen({ route }) {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Mi Perfil</Text>
-      <Text style={styles.label}>Nombre:</Text>
-      <Text style={styles.text}>{user.nombre_completo}</Text>
-      {userType === 'paciente' ? (
-        <>
-          <Text style={styles.label}>DNI:</Text>
-          <Text style={styles.text}>{user.dni}</Text>
-        </>
-      ) : (
-        <>
-          <Text style={styles.label}>Matrícula:</Text>
-          <Text style={styles.text}>{user.matricula}</Text>
-        </>
-      )}
-      <Text style={styles.label}>Teléfono:</Text>
-      <Text style={styles.text}>{user.telefono}</Text>
+      <Text style={styles.label}>Email:</Text>
+      <Text style={styles.text}>{user.email}</Text>
+
+      {/* Podés agregar más campos del perfil que tengas en Supabase */}
+
     </View>
   )
 }

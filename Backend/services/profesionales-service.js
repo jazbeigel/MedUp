@@ -18,12 +18,6 @@ export default class ProfesionalesService {
         return returnEntity;
     }
 
-    getByEmailAsync = async (email) => {
-        console.log(`ProfesionalesService.getByEmailAsync(${email})`);
-        const returnEntity = await this.ProfesionalesRepository.getByEmailAsync(email);
-        return returnEntity;
-    }
-
     createAsync = async (entity) => {
         console.log(`ProfesionalesService.createAsync(${JSON.stringify(entity)})`);
         const rowsAffected = await this.ProfesionalesRepository.createAsync(entity);
@@ -41,4 +35,12 @@ export default class ProfesionalesService {
         const rowsAffected = await this.ProfesionalesRepository.deleteByIdAsync(id);
         return rowsAffected;
     }
+
+    /*
+    getByIdAsync_PPT = async (id) => {
+        console.log('Estoy en: ProfesionalesService.getByIdAsync_PPT()');
+        const returnEntity = await this.ProfesionalesRepository.getByIdAsync_PPT(id);
+        return returnEntity;
+    }
+    */
 }
