@@ -4,7 +4,7 @@ import { supabase } from '../../utils/supabaseClient'
 
 
 export default function Login({ navigation }) {
-  const [email, setEmail] = useState('')
+  const [nombreUsuario, setnombreUsuario] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -18,7 +18,7 @@ export default function Login({ navigation }) {
       method: 'POST',
       Headers: {},
       body: JSON.stringify({
-        email,
+        nombreUsuario,
         password,
       }),
   })
@@ -44,10 +44,10 @@ export default function Login({ navigation }) {
         <Text style={styles.title}>Ingresar a MedUp</Text>
 
         <TextInput
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
+          placeholder="nombreUsuario"
+          value={nombreUsuario}
+          onChangeText={setnombreUsuario}
+          keyboardType="nombreUsuario-address"
           autoCapitalize="none"
           style={styles.input}
         />
