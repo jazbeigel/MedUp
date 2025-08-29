@@ -32,6 +32,20 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+router.get('/email/:email', async (req, res) => {
+  const email = req.params.email;
+  try {
+    const returnEntity = await currentService.getByEmailAsync(email);
+    if (returnEntity != null) {
+      res.status(StatusCodes.OK).json(returnEntity);
+    } else {
+      res.status(StatusCodes.NOT_FOUND).send(`No se encontro la entidad (email:${email}).`);
+    }
+  } catch (error) {
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send('Error interno.');
+  }
+});
+
 router.post('', async (req, res) => {
   try {
     const entity = req.body;

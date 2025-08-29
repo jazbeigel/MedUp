@@ -50,7 +50,6 @@ export default function Register({ navigation }) {
 
   const handleRegister = async () => {
     setError(null)
-    
 
     if (!email || !password || !confirmPassword || !nombreCompleto) {
       setError('Por favor, completá todos los campos obligatorios.')
@@ -99,6 +98,7 @@ export default function Register({ navigation }) {
               matricula,
               id_especialidad: especialidad,
               telefono,
+              email,
             }
 
       const endpoint =
@@ -117,8 +117,16 @@ export default function Register({ navigation }) {
         throw new Error('Error al registrar usuario')
       }
 
-      alert('Registro exitoso')
-      navigation.replace('Login')
+      await supabase.auth.signInWithPassword({ email, password })
+
+      const profileEndpoint =
+        userType === 'paciente'
+          ? `http://localhost:3000/api/pacientes/usuario/${usuarioId}`
+          : `http://localhost:3000/api/profesionales/email/${encodeURIComponent(email)}`
+      const profileRes = await fetch(profileEndpoint)
+      const profile = await profileRes.json()
+
+      navigation.replace('Home', { user: profile, userType })
     } catch (err) {
       console.error(err)
       setError(err.message || 'Ocurrió un error al registrar. Intentalo de nuevo.')
