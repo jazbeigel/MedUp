@@ -61,7 +61,7 @@ export default function Register({ navigation }) {
       return
     }
 
-    if (userType === 'doctor' && (!matricula || !especialidad)) {
+    if (userType === 'doctor' && (!matricula || !especialidad || !telefono)) {
       setError('Por favor, completá todos los campos obligatorios para doctores.')
       return
     }
@@ -96,9 +96,12 @@ export default function Register({ navigation }) {
             password,
             matricula,
             especialidad,
+            telefono,
           }
-         
-      const response = await fetch('http://localhost:3000/api/profesionales', {
+
+      const endpoint = userType === 'paciente' ? 'pacientes' : 'profesionales'
+
+      const response = await fetch(`http://localhost:3000/api/${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -177,6 +180,13 @@ export default function Register({ navigation }) {
               placeholder="Matrícula"
               value={matricula}
               onChangeText={setMatricula}
+              style={styles.input}
+            />
+            <TextInput
+              placeholder="Teléfono"
+              value={telefono}
+              onChangeText={setTelefono}
+              keyboardType="phone-pad"
               style={styles.input}
             />
             <Picker

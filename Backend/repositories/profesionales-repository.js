@@ -54,29 +54,32 @@ export default class ProfesionalesRepository {
 
         try {
             /*
-            INSERT INTO "public"."profesionales" 
-	("id", "nombre_completo", "matricula", "especialidad", "telefono", "id_especialidad") 
-VALUES 
-	('3', 'Pablo', '32132132', 'eliminar este ampo', '1114444', '1');
+            INSERT INTO "public"."profesionales"
+        ("id", "nombre_completo", "matricula", "email", "especialidad", "telefono", "id_especialidad")
+VALUES
+        ('3', 'Pablo', '32132132', 'pablo@test.com', 'eliminar este ampo', '1114444', '1');
             */
             const sql = ` INSERT INTO profesionales (
-                            nombre_completo         , 
-                            matricula               , 
-                 
-                            telefono                , 
+                            nombre_completo         ,
+                            matricula               ,
+                            email                   ,
+                            telefono                ,
+                            especialidad            ,
                             id_especialidad
                         ) VALUES (
-                            $1, 
-                            $2, 
-                            $3, 
-                            $4
-                     
+                            $1,
+                            $2,
+                            $3,
+                            $4,
+                            $5,
+                            $6
                         ) RETURNING id`;
-            const values =  [   entity?.nombre_completo         ?? '', 
-                                entity?.matricula               ?? '', 
-                                entity?.telefono                ?? '', 
-                                entity?.id_
-                                         ?? null
+            const values =  [   entity?.nombre_completo         ?? '',
+                                entity?.matricula               ?? '',
+                                entity?.email                   ?? '',
+                                entity?.telefono                ?? '',
+                                entity?.especialidad            ?? '',
+                                entity?.id_especialidad         ?? null
                             ];
             const resultPg = await this.getDBPool().query(sql, values);
             newId = resultPg.rows[0].id;
