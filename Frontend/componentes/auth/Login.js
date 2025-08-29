@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native'
-import { supabase } from '../../utils/supabaseClient'
+
 
 
 export default function Login({ navigation }) {
@@ -11,32 +11,28 @@ export default function Login({ navigation }) {
 
   const handleLogin = async () => {
     setLoading(true)
-    setError(null) //no se siguen mostrando errores anteriores
+    setError(null) // no se siguen mostrando errores anteriores
 
-    try{
-      const response = await fetch('',{
-      method: 'POST',
-      Headers: {},
-      body: JSON.stringify({
-        email,
-        password,
-      }),
-  })
+    try {
+      const response = await fetch('http://localhost:3000/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      })
+      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data.error || 'Error de conexión, intenta nuevamente')
+      }
 
-    const data = await response.json()
-  
-    if (response.ok) {
-      // redirige a la home, pero todavia no esta hecha
-      navigation.replace('')
-    } else {
-      setError(data.message || 'Error desconocido')
+      navigation.replace('Home', { email })
+    } catch (err) {
+      setError(err.message || 'Error de conexión, intenta nuevamente')
+    } finally {
+      setLoading(false)
     }
-  } catch (err) {
-    setError('Error de conexión, intenta nuevamente')
-  } finally {
-    setLoading(false)
   }
-}
 
   return (
     <View style={styles.container}>

@@ -1,25 +1,27 @@
 import React, { useEffect, useState } from 'react'
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native'
-import { supabase } from '../../utils/supabaseClient'
-
-export default function ProfileScreen() {
+export default function ProfileScreen({ route }) {
+  const { email } = route.params || {}
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const getUser = async () => {
-      const currentUser = supabase.auth.getUser()
-      const { data, error } = await supabase.auth.getUser()
-
-      if (error) {
-        setUser(null)
-      } else {
+    const fetchUser = async () => {
+      try {
+        const response = await fetch(`http://localhost:3000/api/auth/user?email=${encodeURIComponent(email)}`)
+        const data = await response.json()
+        if (!response.ok) {
+          throw new Error(data.error)
+        }
         setUser(data.user)
+      } catch (err) {
+        setUser(null)
+      } finally {
+        setLoading(false)
       }
-      setLoading(false)
     }
-    getUser()
-  }, [])
+    fetchUser()
+  }, [email])
 
   if (loading) {
     return (

@@ -8,6 +8,7 @@ import PacientesController from './controllers/pacientes-controller.js';
 import ResenasController from './controllers/resenas-controller.js';
 import TurnosController from './controllers/turnos-controller.js';
 import ProfesionalesController from './controllers/profesionales-controller.js';
+import AuthController from './controllers/auth-controller.js';
 
 const app = express();
 const port = process.env.PORT ?? 3000;
@@ -22,6 +23,7 @@ app.use('/api/pacientes', PacientesController);
 app.use('/api/resenas', ResenasController);
 app.use('/api/turnos', TurnosController);
 app.use('/api/profesionales', ProfesionalesController);
+app.use('/api/auth', AuthController);
 
 app.listen(port, () => {
   console.log(`Listening on http://localhost:${port}`);

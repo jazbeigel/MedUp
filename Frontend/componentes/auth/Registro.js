@@ -73,52 +73,37 @@ export default function Register({ navigation }) {
 
     setLoading(true)
 
-
-
     try {
-      
-      // Datos que se mandan al backend
-      const userData = userType === 'paciente'
-        ? {
-            tipo: 'paciente',
-            nombre_completo: nombreCompleto,
-            email,
-            password,
-            dni,
-            fecha_nacimiento,
-            direccion,
-            telefono,
-          }
-        : {
-            tipo: 'profesional',
-            nombre_completo: nombreCompleto,
-            email,
-            password,
-            matricula,
-            especialidad,
-          }
-         
-      const response = await fetch('http://localhost:3000/api/profesionales', {
+      const payload = {
+        userType,
+        email,
+        password,
+        nombre_completo: nombreCompleto,
+        fecha_nacimiento,
+        dni,
+        direccion,
+        telefono,
+        matricula,
+        especialidad,
+      }
+
+      const response = await fetch('http://localhost:3000/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(userData),
+        body: JSON.stringify(payload),
       })
-      console.log(response);
+
+      const data = await response.json()
       if (!response.ok) {
-        throw new Error('Error al registrar usuario')
+        throw new Error(data.error || 'Error al registrar usuario')
       }
 
-      const result = await response.json()
-      console.log('Usuario registrado:', result)
-
-      alert('Registro exitoso')
-      navigation.replace('Login')
-
+      navigation.replace('Home', { email })
     } catch (err) {
       console.error(err)
-      setError('Ocurrió un error al registrar. Intentalo de nuevo.')
+      setError(err.message || 'Ocurrió un error al registrar. Intentalo de nuevo.')
     } finally {
       setLoading(false)
     }
@@ -186,7 +171,7 @@ export default function Register({ navigation }) {
             >
               <Picker.Item label="Seleccioná una especialidad" value="" />
               {especialidades.map((esp) => (
-                <Picker.Item key={esp.id} label={esp.nombre} value={esp.nombre} />
+              <Picker.Item key={esp.id} label={esp.nombre} value={esp.id} />
               ))}
             </Picker>
           </>

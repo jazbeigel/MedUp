@@ -1,10 +1,9 @@
 import React from 'react'
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
-import { supabase } from '../../utils/supabaseClient'
-
-export default function HomeScreen({ navigation }) {
+export default function HomeScreen({ navigation, route }) {
+  const { email } = route.params || {}
   const handleLogout = async () => {
-    await supabase.auth.signOut()
+    await fetch('http://localhost:3000/api/auth/logout', { method: 'POST' })
     navigation.replace('Login')
   }
 
@@ -17,7 +16,7 @@ export default function HomeScreen({ navigation }) {
         <Text style={styles.buttonText}>Información</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Profile')}>
+      <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Profile', { email })}>
         <Text style={styles.buttonText}>Mi Perfil</Text>
       </TouchableOpacity>
 
