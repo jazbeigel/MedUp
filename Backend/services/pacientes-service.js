@@ -18,6 +18,12 @@ export default class PacientesService {
         return returnEntity;
     }
 
+    getByUsuarioIdAsync = async (usuarioId) => {
+        console.log(`PacientesService.getByUsuarioIdAsync(${usuarioId})`);
+        const returnEntity = await this.PacientesRepository.getByUsuarioIdAsync(usuarioId);
+        return returnEntity;
+    }
+
     createAsync = async (entity) => {
         console.log(`PacientesService.createAsync(${JSON.stringify(entity)})`);
         const rowsAffected = await this.PacientesRepository.createAsync(entity);

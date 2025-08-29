@@ -11,18 +11,32 @@ export default function Login({ navigation }) {
 
   const handleLogin = async () => {
     setLoading(true)
-    setError(null) // no se siguen mostrando errores anteriores
+    setError(null)
 
 
     try {
-      const { error: loginError } = await supabase.auth.signInWithPassword({
-        email, 
-        b0c8b37a22fbc26d8148f5e14acf053927607541,
+      const { data, error: loginError } = await supabase.auth.signInWithPassword({
+        email,
+        e04e7f96de45e9ced47362e365d9fc60cb4,
         password,
       })
       if (loginError) throw loginError
 
-      navigation.replace('Home')
+      const userId = data.user?.id
+      let userType = 'paciente'
+      let profileRes = await fetch(`http://localhost:3000/api/pacientes/usuario/${userId}`)
+      let profile
+      if (profileRes.ok) {
+        profile = await profileRes.json()
+      } else {
+        profileRes = await fetch(`http://localhost:3000/api/profesionales/email/${encodeURIComponent(email)}`)
+        if (profileRes.ok) {
+          profile = await profileRes.json()
+          userType = 'doctor'
+        }
+      }
+
+      navigation.replace('Home', { user: profile, userType })
     } catch (err) {
       setError(err.message || 'Error de conexión, intenta nuevamente')
     } finally {
