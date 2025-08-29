@@ -32,6 +32,20 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+router.get('/usuario/:usuarioId', async (req, res) => {
+  const usuarioId = req.params.usuarioId;
+  try {
+    const returnEntity = await currentService.getByUsuarioIdAsync(usuarioId);
+    if (returnEntity != null) {
+      res.status(StatusCodes.OK).json(returnEntity);
+    } else {
+      res.status(StatusCodes.NOT_FOUND).send(`No se encontro la entidad (usuario_id:${usuarioId}).`);
+    }
+  } catch (error) {
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send('Error interno.');
+  }
+});
+
 router.post('', async (req, res) => {
   try {
     const entity = req.body;
