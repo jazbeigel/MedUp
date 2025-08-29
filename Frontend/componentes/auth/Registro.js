@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform
 } from 'react-native'
+import { Picker } from '@react-native-picker/picker'
 
 export default function Register({ navigation }) {
   const [userType, setUserType] = useState('') // 'paciente' o 'doctor'
@@ -26,6 +27,22 @@ export default function Register({ navigation }) {
   // Campos doctor
   const [matricula, setMatricula] = useState('')
   const [especialidad, setEspecialidad] = useState('')
+  const [especialidades, setEspecialidades] = useState([])
+
+  useEffect(() => {
+    if (userType === 'doctor') {
+      const fetchEspecialidades = async () => {
+        try {
+          const response = await fetch('http://localhost:3000/api/especialidades')
+          const data = await response.json()
+          setEspecialidades(data)
+        } catch (error) {
+          console.error('Error al obtener especialidades', error)
+        }
+      }
+      fetchEspecialidades()
+    }
+  }, [userType])
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -156,8 +173,22 @@ export default function Register({ navigation }) {
 
         {userType === 'doctor' && (
           <>
-            <TextInput placeholder="Matrícula" value={matricula} onChangeText={setMatricula} style={styles.input} />
-            <TextInput placeholder="Especialidad" value={especialidad} onChangeText={setEspecialidad} style={styles.input} />
+            <TextInput
+              placeholder="Matrícula"
+              value={matricula}
+              onChangeText={setMatricula}
+              style={styles.input}
+            />
+            <Picker
+              selectedValue={especialidad}
+              onValueChange={(itemValue) => setEspecialidad(itemValue)}
+              style={styles.picker}
+            >
+              <Picker.Item label="Seleccioná una especialidad" value="" />
+              {especialidades.map((esp) => (
+                <Picker.Item key={esp.id} label={esp.nombre} value={esp.nombre} />
+              ))}
+            </Picker>
           </>
         )}
 
@@ -250,6 +281,15 @@ const styles = StyleSheet.create({
     marginVertical:8,
     fontSize:16,
     fontWeight:'400'
+  },
+  picker: {
+    width: '100%',
+    height: 50,
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 10,
+    marginVertical: 8,
+    justifyContent: 'center',
   },
   button: {
     width:'100%',
