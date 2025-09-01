@@ -26,7 +26,7 @@ export default function Register({ navigation }) {
 
   // Campos doctor
   const [matricula, setMatricula] = useState('')
-  const [especialidad, setEspecialidad] = useState('')
+  const [especialidadId, setEspecialidadId] = useState(null)
   const [especialidades, setEspecialidades] = useState([])
 
   useEffect(() => {
@@ -61,7 +61,7 @@ export default function Register({ navigation }) {
       return
     }
 
-    if (userType === 'doctor' && (!matricula || !especialidad || !telefono)) {
+    if (userType === 'doctor' && (!matricula || !especialidadId || !telefono)) {
       setError('Por favor, completá todos los campos obligatorios para doctores.')
       return
     }
@@ -78,6 +78,9 @@ export default function Register({ navigation }) {
     try {
       
       // Datos que se mandan al backend
+      const selectedEspecialidad = especialidades.find(
+        (esp) => esp.id === especialidadId
+      )
       const userData = userType === 'paciente'
         ? {
             tipo: 'paciente',
@@ -95,7 +98,8 @@ export default function Register({ navigation }) {
             email,
             password,
             matricula,
-            especialidad,
+            especialidad: selectedEspecialidad?.nombre ?? '',
+            id_especialidad: parseInt(especialidadId, 10),
             telefono,
           }
 
@@ -190,13 +194,13 @@ export default function Register({ navigation }) {
               style={styles.input}
             />
             <Picker
-              selectedValue={especialidad}
-              onValueChange={(itemValue) => setEspecialidad(itemValue)}
+              selectedValue={especialidadId}
+              onValueChange={(itemValue) => setEspecialidadId(itemValue)}
               style={styles.picker}
             >
-              <Picker.Item label="Seleccioná una especialidad" value="" />
+              <Picker.Item label="Seleccioná una especialidad" value={null} />
               {especialidades.map((esp) => (
-                <Picker.Item key={esp.id} label={esp.nombre} value={esp.nombre} />
+                <Picker.Item key={esp.id} label={esp.nombre} value={esp.id} />
               ))}
             </Picker>
           </>

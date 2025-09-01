@@ -1,4 +1,4 @@
-import ResenasRepository from '../repositories/Resenas-repository.js';
+import ResenasRepository from '../repositories/resenas-repository.js';
 
 export default class ResenasService {
     constructor() {
