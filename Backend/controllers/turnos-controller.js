@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { StatusCodes } from 'http-status-codes';
-import TurnosService from './../services/Turnos-service.js';
+import TurnosService from './../services/turnos-service.js';
 
 const router = Router();
 const currentService = new TurnosService();
