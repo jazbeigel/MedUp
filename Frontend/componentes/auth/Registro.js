@@ -135,7 +135,7 @@ export default function Register({ navigation }) {
           <Text style={styles.selectText}>Paciente</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.selectButton} onPress={() => setUserType('doctor')}>
-          <Text style={styles.selectText}>Doctor</Text>
+          <Text style={styles.selectText}>profesional</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.replace('Welcome')}>
           <Text style={styles.link}>← Volver al inicio</Text>
@@ -156,7 +156,7 @@ export default function Register({ navigation }) {
           <Text style={styles.backText}>← Cambiar usuario</Text>
         </TouchableOpacity>
 
-        <Text style={styles.title}>Registro - {userType === 'paciente' ? 'Paciente' : 'Doctor'}</Text>
+        <Text style={styles.title}>Registro - {userType === 'paciente' ? 'Paciente' : 'Profecional'}</Text>
 
         <TextInput
           placeholder="Nombre completo"
