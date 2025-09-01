@@ -156,7 +156,7 @@ export default function Register({ navigation }) {
           <Text style={styles.backText}>← Cambiar usuario</Text>
         </TouchableOpacity>
 
-        <Text style={styles.title}>Registro - {userType === 'paciente' ? 'Paciente' : 'Profecional'}</Text>
+        <Text style={styles.title}>Registro - {userType === 'paciente' ? 'Paciente' : 'profesional'}</Text>
 
         <TextInput
           placeholder="Nombre completo"
