@@ -49,78 +49,65 @@ export default class ProfesionalesRepository {
     }
 
     createAsync = async (entity) => {
-        console.log(`ProfesionalesRepository.createAsync(${JSON.stringify(entity)})`);
-        let newId = 0;
-
-        try {
-            /*
-            INSERT INTO "public"."profesionales"
-        ("id", "nombre_completo", "matricula", "email", "especialidad", "telefono", "id_especialidad")
-VALUES
-        ('3', 'Pablo', '32132132', 'pablo@test.com', 'eliminar este ampo', '1114444', '1');
-            */
-            const sql = ` INSERT INTO profesionales (
-                            nombre_completo         ,
-                            matricula               ,
-                            email                   ,
-                            telefono                ,
-                            especialidad            ,
-                            id_especialidad
-                        ) VALUES (
-                            $1,
-                            $2,
-                            $3,
-                            $4,
-                            $5,
-                            $6
-                        ) RETURNING id`;
-            const values =  [   entity?.nombre_completo         ?? '',
-                                entity?.matricula               ?? '',
-                                entity?.email                   ?? '',
-                                entity?.telefono                ?? '',
-                                entity?.especialidad            ?? '',
-                                entity?.id_especialidad         ?? null
-                            ];
-            const resultPg = await this.getDBPool().query(sql, values);
-            newId = resultPg.rows[0].id;
-        } catch (error) {
-            LogHelper.logError(error);
-        }
-        return newId;
+    console.log(`ProfesionalesRepository.createAsync(${JSON.stringify(entity)})`);
+    try {
+        const sql = `
+        INSERT INTO profesionales (
+            nombre_completo,
+            matricula,
+            email,
+            telefono,
+            id_especialidad
+        ) VALUES ($1,$2,$3,$4,$5)
+        RETURNING id;
+        `;
+        const values = [
+        entity?.nombre_completo ?? '',
+        entity?.matricula ?? '',
+        entity?.email ?? '',
+        entity?.telefono ?? '',
+        entity?.id_especialidad ?? null
+        ];
+        const resultPg = await this.getDBPool().query(sql, values);
+        return resultPg.rows[0].id; // devolvés el id nuevo
+    } catch (error) {
+        LogHelper.logError(error);
+        throw error;
     }
+    };
 
     updateAsync = async (entity) => {
-        console.log(`ProfesionalesRepository.updateAsync(${JSON.stringify(entity)})`);
-        let rowsAffected = 0;
-        let id = entity.id;
-        
-        try {
-            const previousEntity = await this.getByIdAsync(id);
-            if (previousEntity== null) return 0;
-            const sql = `UPDATE profesionales SET 
-                            nombre              = $2, 
-                            apellido            = $3, 
-                            id_curso            = $4, 
-                            fecha_nacimiento    = $5, 
-                            hace_deportes       = $6
-                        WHERE id = $1`;
-                            
-            const values =  [   id,     // $1
-                                entity?.nombre              ?? previousEntity?.nombre, 
-                                entity?.apellido            ?? previousEntity?.apellido, 
-                                entity?.id_curso            ?? previousEntity?.id_curso, 
-                                entity?.fecha_nacimiento    ?? previousEntity?.fecha_nacimiento, 
-                                entity?.hace_deportes       ?? previousEntity?.hace_deportes
-                            ];
-            const resultPg = await this.getDBPool().query(sql, values);
+    console.log(`ProfesionalesRepository.updateAsync(${JSON.stringify(entity)})`);
+    const id = entity.id;
+    try {
+        const prev = await this.getByIdAsync(id);
+        if (!prev) return 0;
 
-            rowsAffected = resultPg.rowCount;
-        } catch (error) {
-            LogHelper.logError(error);
-        }
-        return rowsAffected;
+        const sql = `
+        UPDATE profesionales SET
+            nombre_completo = $2,
+            matricula       = $3,
+            email           = $4,
+            telefono        = $5,
+            id_especialidad = $6
+        WHERE id = $1
+        `;
+        const values = [
+        id,
+        entity?.nombre_completo ?? prev.nombre_completo,
+        entity?.matricula       ?? prev.matricula,
+        entity?.email           ?? prev.email,
+        entity?.telefono        ?? prev.telefono,
+        entity?.id_especialidad ?? prev.id_especialidad
+        ];
+        const resultPg = await this.getDBPool().query(sql, values);
+        return resultPg.rowCount;
+    } catch (error) {
+        LogHelper.logError(error);
+        return 0;
     }
-    
+    };
+
     deleteByIdAsync = async (id) => {
         console.log(`ProfesionalesRepository.deleteByIdAsync(${id})`);
         let rowsAffected = 0;

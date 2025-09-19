@@ -35,16 +35,14 @@ router.get('/:id', async (req, res) => {
 router.post('', async (req, res) => {
   try {
     const entity = req.body;
-    const newId = await currentService.createAsync(entity);
-    if (newId > 0) {
-      res.status(StatusCodes.CREATED).json(newId);
-    } else {
-      res.status(StatusCodes.BAD_REQUEST).json(null);
-    }
+    const paciente = await currentService.createAsync(entity); // ← objeto
+    res.status(StatusCodes.CREATED).json(paciente);            // ← 201 con el objeto
   } catch (error) {
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send('Error interno.');
+    console.error(error);
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: error.message });
   }
 });
+
 
 router.put('/', async (req, res) => {
   try {

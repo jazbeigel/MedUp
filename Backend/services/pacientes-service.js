@@ -19,10 +19,10 @@ export default class PacientesService {
     }
 
     createAsync = async (entity) => {
-        console.log(`PacientesService.createAsync(${JSON.stringify(entity)})`);
-        const rowsAffected = await this.PacientesRepository.createAsync(entity);
-        return rowsAffected;
-    }
+    console.log(`PacientesService.createAsync(${JSON.stringify(entity)})`);
+    const paciente = await this.PacientesRepository.createAsync(entity); // ← objeto, no número
+    return paciente;
+    };
 
     updateAsync = async (entity) => {
         console.log(`PacientesService.updateAsync(${JSON.stringify(entity)})`);
