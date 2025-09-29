@@ -56,6 +56,88 @@ router.post('', async (req, res) => {
   }
 });
 
+router.put('/:id', async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  const { paciente_id, profesional_id, fecha, estado } = req.body;
+
+  if (Number.isNaN(id)) {
+    return res.status(StatusCodes.BAD_REQUEST).json({
+      ok: false,
+      message: 'El identificador del turno es inválido.',
+    });
+  }
+
+  if (
+    paciente_id === undefined &&
+    profesional_id === undefined &&
+    fecha === undefined &&
+    estado === undefined
+  ) {
+    return res.status(StatusCodes.BAD_REQUEST).json({
+      ok: false,
+      message: 'No se enviaron campos para actualizar.',
+    });
+  }
+
+  const allowedEstados = ['P', 'C', 'R'];
+  if (estado !== undefined && !allowedEstados.includes(estado)) {
+    return res.status(StatusCodes.BAD_REQUEST).json({
+      ok: false,
+      message: `El estado "${estado}" no es válido. Valores permitidos: ${allowedEstados.join(', ')}`,
+    });
+  }
+
+  try {
+    const entity = { id, paciente_id, profesional_id, fecha, estado };
+    const updatedEntity = await currentService.updateAsync(entity);
+    if (updatedEntity != null) {
+      return res.status(StatusCodes.OK).json({
+        ok: true,
+        turno: updatedEntity,
+      });
+    }
+    return res.status(StatusCodes.NOT_FOUND).json({
+      ok: false,
+      message: `No se encontró el turno (id:${id}).`,
+    });
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ ok: false, message: 'Error interno del servidor' });
+  }
+});
+
+router.put('/:id/confirmar', async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+
+  if (Number.isNaN(id)) {
+    return res.status(StatusCodes.BAD_REQUEST).json({
+      ok: false,
+      message: 'El identificador del turno es inválido.',
+    });
+  }
+
+  try {
+    const updatedEntity = await currentService.confirmarAsync(id);
+    if (updatedEntity != null) {
+      return res.status(StatusCodes.OK).json({
+        ok: true,
+        turno: updatedEntity,
+      });
+    }
+    return res.status(StatusCodes.NOT_FOUND).json({
+      ok: false,
+      message: `No se encontró el turno (id:${id}).`,
+    });
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ ok: false, message: 'Error interno del servidor' });
+  }
+});
+
 router.delete('/:id', async (req, res) => {
   const id = req.params.id;
   try {

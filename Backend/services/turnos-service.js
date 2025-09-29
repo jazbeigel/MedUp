@@ -23,13 +23,18 @@ export default class TurnosService {
         const rowsAffected = await this.TurnosRepository.createAsync(entity);
         return rowsAffected;
     }
-    /*  
+
     updateAsync = async (entity) => {
         console.log(`TurnosService.updateAsync(${JSON.stringify(entity)})`);
-        const rowsAffected = await this.TurnosRepository.updateAsync(entity);
-        return rowsAffected;
+        const updatedEntity = await this.TurnosRepository.updateAsync(entity);
+        return updatedEntity;
     }
-    */    
+
+    confirmarAsync = async (id) => {
+        console.log(`TurnosService.confirmarAsync(${id})`);
+        const updatedEntity = await this.TurnosRepository.updateEstadoAsync(id, 'C');
+        return updatedEntity;
+    }
     deleteByIdAsync = async (id) => {
         console.log(`TurnosService.deleteByIdAsync(${id})`);
         const rowsAffected = await this.TurnosRepository.deleteByIdAsync(id);
