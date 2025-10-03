@@ -11,6 +11,12 @@ import {
 } from 'react-native'
 import { Picker } from '@react-native-picker/picker'
 
+const API_BASE_URL = Platform.select({
+  android: 'http://10.0.2.2:3000',
+  ios: 'http://localhost:3000',
+  default: 'http://localhost:3000'
+})
+
 export default function Register({ navigation }) {
   const [userType, setUserType] = useState('') // 'paciente' o 'doctor'
   const [email, setEmail] = useState('')
@@ -33,7 +39,19 @@ export default function Register({ navigation }) {
     if (userType === 'doctor') {
       const fetchEspecialidades = async () => {
         try {
-          const response = await fetch('http://localhost:3000/api/especialidades')
+          const response = await fetch(`${API_BASE_URL}/api/especialidades`)
+
+          if (!response.ok) {
+            const errorText = await response.text()
+            throw new Error(`HTTP ${response.status} - ${errorText}`)
+          }
+
+          const contentType = response.headers.get('content-type') ?? ''
+          if (!contentType.includes('application/json')) {
+            const errorText = await response.text()
+            throw new Error(`Respuesta no válida del servidor: ${errorText}`)
+          }
+
           const data = await response.json()
           setEspecialidades(data)
         } catch (error) {
@@ -105,7 +123,7 @@ export default function Register({ navigation }) {
 
       const endpoint = userType === 'paciente' ? 'pacientes' : 'profesionales'
 
-      const response = await fetch(`http://localhost:3000/api/${endpoint}`, {
+      const response = await fetch(`${API_BASE_URL}/api/${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -113,8 +131,27 @@ export default function Register({ navigation }) {
         body: JSON.stringify(userData),
       })
       console.log(response);
+      const contentType = response.headers.get('content-type') ?? ''
       if (!response.ok) {
-        throw new Error('Error al registrar usuario')
+        let errorMessage = 'Error al registrar usuario'
+
+        if (contentType.includes('application/json')) {
+          const errorData = await response.json()
+          if (errorData?.message) {
+            errorMessage = errorData.message
+          }
+        } else {
+          const errorText = await response.text()
+          if (errorText) {
+            errorMessage = `${errorMessage}: ${errorText}`
+          }
+        }
+
+        throw new Error(errorMessage)
+      }
+
+      if (!contentType.includes('application/json')) {
+        throw new Error('Respuesta inesperada del servidor')
       }
 
       const result = await response.json()
