@@ -70,4 +70,42 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+router.put('/:id', async (req, res) => {
+  try {
+    const id = req.params.id;
+    const { estado, paciente_id, profesional_id, fecha } = req.body;
+
+    // Validación mínima: que venga al menos un campo a actualizar
+    if (
+      estado === undefined &&
+      paciente_id === undefined &&
+      profesional_id === undefined &&
+      fecha === undefined
+    ) {
+      return res.status(400).json({
+        ok: false,
+        message: 'Debes enviar al menos un campo para actualizar (por ejemplo, estado).',
+      });
+    }
+
+    const rows = await currentService.updateAsync({
+      id,
+      estado,
+      paciente_id,
+      profesional_id,
+      fecha
+    });
+
+    if (rows > 0) {
+      return res.status(200).json({ ok: true, message: 'Turno actualizado.' });
+    } else {
+      return res.status(404).json({ ok: false, message: `No se encontró el turno (id:${id}).` });
+    }
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ ok: false, message: 'Error interno del servidor' });
+  }
+});
+
+
 export default router;

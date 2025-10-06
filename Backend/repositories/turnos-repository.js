@@ -77,38 +77,41 @@ export default class TurnosRepository {
     }
     
     
-/*
     updateAsync = async (entity) => {
         console.log(`TurnosRepository.updateAsync(${JSON.stringify(entity)})`);
         let rowsAffected = 0;
-        let id = entity.id;
-        
+        const id = Number(entity.id);
+      
         try {
-            const previousEntity = await this.getByIdAsync(id);
-            if (previousEntity== null) return 0;
-            const sql = `UPDATE Turnos SET 
-                            paciente_id         = $3, 
-                            profecional_id      = $4, 
-                            fecha               = $5, 
-                            creado_el           = $6
-                        WHERE id = $1`;
-                            
-            const values =  [   id,     // $1
-                                entity?.nombre              ?? previousEntity?.nombre, 
-                                entity?.apellido            ?? previousEntity?.apellido, 
-                                entity?.id_curso            ?? previousEntity?.id_curso, 
-                                entity?.fecha_nacimiento    ?? previousEntity?.fecha_nacimiento, 
-                                entity?.hace_deportes       ?? previousEntity?.hace_deportes
-                            ];
-            const resultPg = await this.getDBPool().query(sql, values);
-
-            rowsAffected = resultPg.rowCount;
+          // Verifico que exista
+          const previous = await this.getByIdAsync(id);
+          if (!previous) return 0;
+      
+          const sql = `
+            UPDATE turnos SET
+              estado = COALESCE($2, estado),
+              paciente_id = COALESCE($3, paciente_id),
+              profesional_id = COALESCE($4, profesional_id),
+              fecha = COALESCE($5, fecha)
+            WHERE id = $1
+          `;
+      
+          const values = [
+            id,                                // $1
+            entity.estado ?? null,             // $2
+            entity.paciente_id ?? null,        // $3
+            entity.profesional_id ?? null,     // $4
+            entity.fecha ?? null               // $5
+          ];
+      
+          const resultPg = await this.getDBPool().query(sql, values);
+          rowsAffected = resultPg.rowCount;
         } catch (error) {
-            LogHelper.logError(error);
+          LogHelper.logError(error);
         }
         return rowsAffected;
-    }
-    
+      }      
+    /*
     deleteByIdAsync = async (id) => {
         console.log(`TurnosRepository.deleteByIdAsync(${id})`);
         let rowsAffected = 0;
@@ -123,34 +126,4 @@ export default class TurnosRepository {
         }
         return rowsAffected;
     }
-}
-/*
-Este operador (??) retorna el lado derecho de la operación cuando el lado izquierdo es un valor falsy.
-
-falsy es un valor que se considera false (false). 
-En Javascript existen sólo 6 valores falsy: undefined, null, NaN, 0, "" (string vacio) y false.
-
-console.log(12 || "not found") // 12
-console.log(0  || "not found") // "not found"
-
-console.log("jane" || "not found") // "jane"
-console.log(""     || "not found") // "not found"
-
-console.log(true  || "not found") // true
-console.log(false || "not found") // "not found"
-
-console.log(undefined || "not found") // "not found"
-console.log(null      || "not found") // "not found"
-----------------------------------------------------
-console.log(12 ?? "not found") // 12
-console.log(0  ?? "not found") // 0
-
-console.log("jane" ?? "not found") // "jane"
-console.log(""     ?? "not found") // ""
-
-console.log(true  ?? "not found") // true
-console.log(false ?? "not found") // false
-
-console.log(undefined ?? "not found") // "not found"
-console.log(null      ?? "not found") // "not found"
-*/}
+}*/}
