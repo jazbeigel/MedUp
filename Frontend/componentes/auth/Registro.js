@@ -231,11 +231,11 @@ export default function Register({ navigation }) {
               style={styles.input}
             />
             <Picker
-              selectedValue={especialidadId}
+              selectedValue={especialidadId || ""}
               onValueChange={(itemValue) => setEspecialidadId(itemValue)}
               style={styles.picker}
             >
-              <Picker.Item label="Seleccioná una especialidad" value={null} />
+               <Picker.Item label="Seleccioná una especialidad" value="" />
               {especialidades.map((esp) => (
                 <Picker.Item key={esp.id} label={esp.nombre} value={esp.id} />
               ))}
