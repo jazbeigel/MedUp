@@ -32,28 +32,67 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+// POST: mapear password -> contrasena y manejar duplicado de email
 router.post('', async (req, res) => {
   try {
-    const entity = req.body;
-    const paciente = await currentService.createAsync(entity); // ← objeto
-    res.status(StatusCodes.CREATED).json(paciente);            // ← 201 con el objeto
+    const body = req.body;
+
+    // Normalizo fecha si vino con barras (opcional)
+    const fechaNormalizada =
+      typeof body.fecha_nacimiento === 'string'
+        ? body.fecha_nacimiento.replaceAll('/', '-')
+        : body.fecha_nacimiento;
+
+    const mappedPassword = body.contrasena ?? body.password;
+
+    const entity = {
+      ...body,
+      ...(fechaNormalizada ? { fecha_nacimiento: fechaNormalizada } : {}),
+      ...(mappedPassword !== undefined ? { contrasena: mappedPassword } : {}),
+    };
+
+    const paciente = await currentService.createAsync(entity);
+    res.status(StatusCodes.CREATED).json(paciente);
   } catch (error) {
+    // Duplicado (unique violation)
+    if (error?.code === '23505' && String(error?.constraint).includes('pacientes_email_key')) {
+      return res
+        .status(StatusCodes.CONFLICT)
+        .json({ error: 'El email ya está registrado.' });
+    }
     console.error(error);
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: error.message });
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: 'Error interno.' });
   }
 });
 
-
+// PUT: aceptar password y mapearlo a contrasena
 router.put('/', async (req, res) => {
   try {
-    const entity = req.body;
+    const body = req.body;
+
+    const fechaNormalizada =
+      typeof body.fecha_nacimiento === 'string'
+        ? body.fecha_nacimiento.replaceAll('/', '-')
+        : body.fecha_nacimiento;
+
+    const mappedPassword = body.contrasena ?? body.password;
+
+    const entity = {
+      ...body,
+      ...(fechaNormalizada ? { fecha_nacimiento: fechaNormalizada } : {}),
+      ...(mappedPassword !== undefined ? { contrasena: mappedPassword } : {}),
+    };
+
     const rowsAffected = await currentService.updateAsync(entity);
     if (rowsAffected != 0) {
       res.status(StatusCodes.OK).json(rowsAffected);
     } else {
-      res.status(StatusCodes.NOT_FOUND).send(`No se encontro la entidad (id:${entity.id}).`);
+      res
+        .status(StatusCodes.NOT_FOUND)
+        .send(`No se encontro la entidad (id:${entity.id}).`);
     }
   } catch (error) {
+    // Si quisieras, acá también podrías detectar duplicado de email
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send('Error interno.');
   }
 });

@@ -102,7 +102,7 @@ export default class ProfesionalesRepository {
         entity?.email           ?? prev.email,
         entity?.telefono        ?? prev.telefono,
         entity?.id_especialidad ?? prev.id_especialidad,
-        entity?.contrasena ?? prev.contrasena
+        entity?.contrasena      ?? prev.contrasena
         ];
         const resultPg = await this.getDBPool().query(sql, values);
         return resultPg.rowCount;

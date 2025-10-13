@@ -32,9 +32,20 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+// POST: mapear password -> contrasena
 router.post('', async (req, res) => {
   try {
-    const entity = req.body;
+    const body = req.body;
+
+    // Si viene "password", lo mapeamos a "contrasena"
+    const mappedPassword = body.contrasena ?? body.password;
+
+    const entity = {
+      ...body,
+      // Solo seteamos contrasena si vino alguno (evitamos null explícito)
+      ...(mappedPassword !== undefined ? { contrasena: mappedPassword } : {}),
+    };
+
     const newId = await currentService.createAsync(entity);
     if (newId > 0) {
       res.status(StatusCodes.CREATED).json(newId);
@@ -46,14 +57,26 @@ router.post('', async (req, res) => {
   }
 });
 
+// PUT: también aceptar password y mapearlo a contrasena
 router.put('/', async (req, res) => {
   try {
-    const entity = req.body;
+    const body = req.body;
+
+    const mappedPassword = body.contrasena ?? body.password;
+
+    const entity = {
+      ...body,
+      // En update conviene no pisar si no vino: solo incluimos si existe
+      ...(mappedPassword !== undefined ? { contrasena: mappedPassword } : {}),
+    };
+
     const rowsAffected = await currentService.updateAsync(entity);
     if (rowsAffected != 0) {
       res.status(StatusCodes.OK).json(rowsAffected);
     } else {
-      res.status(StatusCodes.NOT_FOUND).send(`No se encontro la entidad (id:${entity.id}).`);
+      res
+        .status(StatusCodes.NOT_FOUND)
+        .send(`No se encontro la entidad (id:${entity.id}).`);
     }
   } catch (error) {
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send('Error interno.');
