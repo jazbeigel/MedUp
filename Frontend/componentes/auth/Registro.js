@@ -47,20 +47,10 @@ export default function Register({ navigation }) {
       const fetchEspecialidades = async () => {
         try {
           const url = `${API_BASE_URL}/api/especialidades`
-          console.log('GET ESPECIALIDADES:', url)
-
           const response = await fetch(url)
-          if (!response.ok) {
-            const errorText = await response.text().catch(() => '')
-            throw new Error(`HTTP ${response.status} - ${errorText}`)
-          }
-
+          if (!response.ok) throw new Error(`HTTP ${response.status}`)
           const contentType = response.headers.get('content-type') ?? ''
-          if (!contentType.includes('application/json')) {
-            const errorText = await response.text().catch(() => '')
-            throw new Error(`Respuesta no válida del servidor: ${errorText}`)
-          }
-
+          if (!contentType.includes('application/json')) throw new Error('Respuesta inválida')
           const data = await response.json()
           setEspecialidades(Array.isArray(data) ? data : [])
         } catch (error) {
@@ -68,7 +58,6 @@ export default function Register({ navigation }) {
           setEspecialidades([])
         }
       }
-
       fetchEspecialidades()
     }
   }, [userType])
@@ -81,17 +70,14 @@ export default function Register({ navigation }) {
       setError('Por favor, completá todos los campos obligatorios.')
       return
     }
-
     if (userType === 'paciente' && (!dni || !fecha_nacimiento || !direccion || !telefono)) {
       setError('Por favor, completá todos los campos obligatorios para pacientes.')
       return
     }
-
     if (userType === 'doctor' && (!matricula || !especialidadId || !telefono)) {
       setError('Por favor, completá todos los campos obligatorios para doctores.')
       return
     }
-
     if (password !== confirmPassword) {
       setError('Las contraseñas no coinciden.')
       return
@@ -100,9 +86,9 @@ export default function Register({ navigation }) {
     setLoading(true)
 
     try {
-      const selectedEspecialidad = especialidades.find(
-        (esp) => String(esp.id) === String(especialidadId)
-      )
+      // Normalizar fecha si vino con barras
+      const fechaNormalizada =
+        userType === 'paciente' ? (fecha_nacimiento || '').replaceAll('/', '-') : undefined
 
       const userData =
         userType === 'paciente'
@@ -110,9 +96,9 @@ export default function Register({ navigation }) {
               tipo: 'paciente',
               nombre_completo: nombreCompleto,
               email,
-              password,
+              password, // el backend mapea password -> contrasena
               dni,
-              fecha_nacimiento,
+              fecha_nacimiento: fechaNormalizada || fecha_nacimiento,
               direccion,
               telefono,
             }
@@ -120,18 +106,14 @@ export default function Register({ navigation }) {
               tipo: 'profesional',
               nombre_completo: nombreCompleto,
               email,
-              password,
+              password, // el backend mapea password -> contrasena
               matricula,
               id_especialidad: especialidadId ? parseInt(especialidadId, 10) : null,
               telefono,
-              // especialidad: selectedEspecialidad?.nombre ?? '' // opcional
             }
 
       const endpoint = userType === 'paciente' ? 'pacientes' : 'profesionales'
       const url = `${API_BASE_URL}/api/${endpoint}`
-
-      console.log('POST registro:', url, userData)
-
       const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -139,19 +121,19 @@ export default function Register({ navigation }) {
       })
 
       const contentType = response.headers.get('content-type') ?? ''
-
       if (!response.ok) {
+        if (response.status === 409) throw new Error('El email ya está registrado.')
         let errorMessage = 'Error al registrar usuario'
         if (contentType.includes('application/json')) {
           const errorData = await response.json().catch(() => null)
           if (errorData?.message) errorMessage = errorData.message
+          if (errorData?.error) errorMessage = errorData.error
         } else {
           const errorText = await response.text().catch(() => '')
           if (errorText) errorMessage = `${errorMessage}: ${errorText}`
         }
         throw new Error(errorMessage)
       }
-
       if (!contentType.includes('application/json')) {
         throw new Error('Respuesta inesperada del servidor')
       }
@@ -159,8 +141,17 @@ export default function Register({ navigation }) {
       const result = await response.json()
       console.log('Usuario registrado:', result)
 
-      alert('Registro exitoso')
-      navigation.replace('Login')
+      const createdUser =
+        userType === 'paciente'
+          ? result
+          : { id: typeof result === 'number' ? result : result?.id, ...userData }
+
+      // Redirigir a Home y limpiar historial
+      alert('Registro exitoso!!!!!')
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Home', params: { user: createdUser, rol: userType } }],
+      })
     } catch (err) {
       console.error(err)
       setError(err?.message ?? 'Ocurrió un error al registrar. Intentalo de nuevo.')
@@ -218,19 +209,8 @@ export default function Register({ navigation }) {
 
         {userType === 'doctor' && (
           <>
-            <TextInput
-              placeholder="Matrícula"
-              value={matricula}
-              onChangeText={setMatricula}
-              style={styles.input}
-            />
-            <TextInput
-              placeholder="Teléfono"
-              value={telefono}
-              onChangeText={setTelefono}
-              keyboardType="phone-pad"
-              style={styles.input}
-            />
+            <TextInput placeholder="Matrícula" value={matricula} onChangeText={setMatricula} style={styles.input} />
+            <TextInput placeholder="Teléfono" value={telefono} onChangeText={setTelefono} keyboardType="phone-pad" style={styles.input} />
             <Picker
               selectedValue={especialidadId || ''}
               onValueChange={(val) => setEspecialidadId(String(val))}
