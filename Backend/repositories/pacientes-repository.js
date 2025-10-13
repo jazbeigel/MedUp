@@ -54,8 +54,9 @@ export default class PacientesRepository {
           dni,
           email,
           direccion,
-          telefono
-        ) VALUES ($1,$2,$3,$4,$5,$6)
+          telefono,
+          contrasena
+        ) VALUES ($1,$2,$3,$4,$5,$6,$7)
         RETURNING *;
       `;
       const values = [
@@ -64,7 +65,8 @@ export default class PacientesRepository {
         entity.dni,
         entity.email,
         entity.direccion,
-        entity.telefono
+        entity.telefono,
+        entity.contrasena
       ];
       const resultPg = await this.getDBPool().query(sql, values); // 👈 usar el pool de la clase
       return resultPg.rows[0];
@@ -90,7 +92,8 @@ export default class PacientesRepository {
           dni              = $5,
           email            = $6,
           direccion        = $7,
-          telefono         = $8
+          telefono         = $8,
+          contrasena       = $9
         WHERE id = $1
       `;
       const values = [
@@ -101,7 +104,8 @@ export default class PacientesRepository {
         entity?.dni              ?? previous.dni,
         entity?.email            ?? previous.email,          // 👈 agregado
         entity?.direccion        ?? previous.direccion,
-        entity?.telefono         ?? previous.telefono
+        entity?.telefono         ?? previous.telefono,
+        entity?.contrasena         ?? previous.contrasena
       ];
       const resultPg = await this.getDBPool().query(sql, values);
       return resultPg.rowCount;

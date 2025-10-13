@@ -57,8 +57,9 @@ export default class ProfesionalesRepository {
             matricula,
             email,
             telefono,
-            id_especialidad
-        ) VALUES ($1,$2,$3,$4,$5)
+            id_especialidad,
+            contrasena
+        ) VALUES ($1,$2,$3,$4,$5,$6)
         RETURNING id;
         `;
         const values = [
@@ -66,7 +67,8 @@ export default class ProfesionalesRepository {
         entity?.matricula ?? '',
         entity?.email ?? '',
         entity?.telefono ?? '',
-        entity?.id_especialidad ?? null
+        entity?.id_especialidad ?? null,
+        entity?.contrasena ?? null
         ];
         const resultPg = await this.getDBPool().query(sql, values);
         return resultPg.rows[0].id; // devolvés el id nuevo
@@ -89,7 +91,8 @@ export default class ProfesionalesRepository {
             matricula       = $3,
             email           = $4,
             telefono        = $5,
-            id_especialidad = $6
+            id_especialidad = $6,
+            contrasena      = $7
         WHERE id = $1
         `;
         const values = [
@@ -98,7 +101,8 @@ export default class ProfesionalesRepository {
         entity?.matricula       ?? prev.matricula,
         entity?.email           ?? prev.email,
         entity?.telefono        ?? prev.telefono,
-        entity?.id_especialidad ?? prev.id_especialidad
+        entity?.id_especialidad ?? prev.id_especialidad,
+        entity?.contrasena ?? prev.contrasena
         ];
         const resultPg = await this.getDBPool().query(sql, values);
         return resultPg.rowCount;
