@@ -35,6 +35,12 @@ export default class PacientesService {
         const rowsAffected = await this.PacientesRepository.deleteByIdAsync(id);
         return rowsAffected;
     }
+    
+    getByEmailAsync = async (email) => {
+        console.log(`PacientesService.getByEmailAsync(${email})`);
+        const paciente = await this.PacientesRepository.getByEmailAsync(email);
+        return paciente;
+    }
 
     /*
     getByIdAsync_PPT = async (id) => {

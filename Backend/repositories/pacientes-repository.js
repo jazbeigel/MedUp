@@ -127,4 +127,17 @@ export default class PacientesRepository {
       return 0;
     }
   };
+  // NUEVO: obtener paciente por email
+  getByEmailAsync = async (email) => {
+    console.log(`PacientesRepository.getByEmailAsync(${email})`);
+    try {
+      const sql = `SELECT * FROM pacientes WHERE LOWER(email)=LOWER($1) LIMIT 1`;
+      const values = [email];
+      const resultPg = await this.getDBPool().query(sql, values);
+      return resultPg.rows[0] ?? null;
+    } catch (error) {
+      LogHelper.logError(error);
+      return null;
+    }
+  };
 }

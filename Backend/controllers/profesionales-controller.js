@@ -32,6 +32,51 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+    // POST /api/profesionales/login
+    router.post('/login', async (req, res) => {
+      try {
+        const { email, password } = req.body ?? {};
+        if (!email || !password) {
+          return res
+            .status(StatusCodes.BAD_REQUEST)
+            .json({ error: 'Email y password son requeridos.' });
+        }
+  
+        const profesional = await currentService.getByEmailAsync(String(email).trim().toLowerCase());
+
+        if (!profesional) {
+          return res
+            .status(StatusCodes.UNAUTHORIZED)
+            .json({ error: 'Credenciales inválidas.' });
+        }
+  
+        // En tu esquema actual guardás "contrasena" en texto plano.
+        // Si en algún momento migrás a hash, acá deberías usar bcrypt.compare().
+        const stored = profesional.contrasena ?? profesional.password ?? '';
+        const ok = String(stored) === String(password);
+  
+        if (!ok) {
+          return res
+            .status(StatusCodes.UNAUTHORIZED)
+            .json({ error: 'Credenciales inválidas.' });
+        }
+  
+        // Armar respuesta "safe" (sin contrasena)
+        const { contrasena, password: _pwd, ...safeUser } = profesional;
+  
+        // (Opcional) acá podrías generar un JWT si querés:
+        const token = jwt.sign({ sub: profesional.id, role: 'profesional' }, process.env.JWT_SECRET, { expiresIn: '1h' });
+         return res.status(StatusCodes.OK).json({ user: safeUser, token });
+  
+        return res.status(StatusCodes.OK).json({ user: safeUser });
+      } catch (error) {
+        console.error('Error en /api/profesionales/login:', error);
+        return res
+          .status(StatusCodes.INTERNAL_SERVER_ERROR)
+          .json({ error: 'Error interno.' });
+      }
+    });  
+
 // POST: mapear password -> contrasena
 router.post('', async (req, res) => {
   try {

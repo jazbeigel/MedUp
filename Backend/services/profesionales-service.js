@@ -35,6 +35,12 @@ export default class ProfesionalesService {
         const rowsAffected = await this.ProfesionalesRepository.deleteByIdAsync(id);
         return rowsAffected;
     }
+    getByEmailAsync = async (email) => {
+        console.log(`ProfesionalesService.getByEmailAsync(${email})`);
+        const paciente = await this.ProfesionalesRepository.getByEmailAsync(email);
+        return paciente;
+    }
+
 
     /*
     getByIdAsync_PPT = async (id) => {

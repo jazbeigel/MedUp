@@ -126,6 +126,21 @@ export default class ProfesionalesRepository {
         }
         return rowsAffected;
     }
+
+    // NUEVO: obtener paciente por email
+  getByEmailAsync = async (email) => {
+    console.log(`ProfesionalesRepository.getByEmailAsync(${email})`);
+    try {
+      // En getByEmailAsync:
+        const sql = `SELECT * FROM profesionales WHERE LOWER(email)=LOWER($1) LIMIT 1`; // todo minúscula
+        const values = [email];
+        const resultPg = await this.getDBPool().query(sql, values);
+      return resultPg.rows[0] ?? null;
+    } catch (error) {
+      LogHelper.logError(error);
+      return null;
+    }
+  };
 }
 /*
 Este operador (??) retorna el lado derecho de la operación cuando el lado izquierdo es un valor falsy.
