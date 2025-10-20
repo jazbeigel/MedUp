@@ -150,8 +150,13 @@ export default function Register({ navigation }) {
       alert('Registro exitoso!!!!!')
       navigation.reset({
         index: 0,
-        routes: [{ name: 'Home', params: { user: createdUser, rol: userType } }],
-      })
+        routes: [
+          {
+            name: userType === 'paciente' ? 'HomePaciente' : 'HomeProfesional',
+            params: { user: createdUser },
+          },
+        ],
+      });
     } catch (err) {
       console.error(err)
       setError(err?.message ?? 'Ocurrió un error al registrar. Intentalo de nuevo.')

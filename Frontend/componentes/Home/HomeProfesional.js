@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image } from 'react-native';
 import { supabase } from '../../utils/supabaseClient';
 
-export default function HomeScreen({ navigation }) {
+export default function HomeProfesional({ navigation }) {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigation.replace('Login');
@@ -99,7 +99,7 @@ export default function HomeScreen({ navigation }) {
 
       {/* FOOTER */}
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.footerBtn} onPress={() => navigation.navigate('Home')}>
+        <TouchableOpacity style={styles.footerBtn} onPress={() => navigation.navigate('HomeProfesional')}>
           <Text style={styles.footerBtnText}>Inicio</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.footerBtn} onPress={() => navigation.navigate('Profile')}>
