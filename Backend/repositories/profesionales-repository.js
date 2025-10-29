@@ -127,7 +127,7 @@ export default class ProfesionalesRepository {
         return rowsAffected;
     }
 
-    // NUEVO: obtener paciente por email
+    // NUEVO: obtener profesional por email
   getByEmailAsync = async (email) => {
     console.log(`ProfesionalesRepository.getByEmailAsync(${email})`);
     try {
