@@ -9,20 +9,24 @@ const API_BASE_URL =
     ? `http://10.0.2.2:${API_PORT}`
     : `http://localhost:${API_PORT}`
 
-export default function Login({ navigation }) {
+export default function Login({ navigation, route }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+
+  const tipoUsuario = route?.params?.tipoUsuario || 'paciente'
 
   const handleLogin = async () => {
     setLoading(true)
     setError(null)
 
     try {
-      const resp = await fetch(`${API_BASE_URL}/api/pacientes/login`, {
+      const endpoint = tipoUsuario === 'profesional' ? 'profesionales' : 'pacientes'
+       
+      const resp = await fetch(`${API_BASE_URL}/api/${endpoint}/login`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }, 
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       })
 
@@ -35,7 +39,12 @@ export default function Login({ navigation }) {
       const user = data.user
       if (!user) throw new Error('Respuesta inválida del servidor')
 
-      navigation.replace('HomePaciente', { user })
+      if (tipoUsuario === 'profesional') {
+        navigation.replace('HomeProfesional', { user })
+      } else {
+        navigation.replace('HomePaciente', { user })
+      }
+
     } catch (e) {
       console.error('Login error:', e)
       setError(e.message || 'Error al iniciar sesión')
@@ -47,7 +56,9 @@ export default function Login({ navigation }) {
   return (
     <View style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.title}>Ingresar a MedUp</Text>
+        <Text style={styles.title}>
+          {tipoUsuario === 'profesional' ? 'Ingreso de Médicos' : 'Ingreso de Pacientes'}
+        </Text>
 
         <TextInput
           placeholder="Email"
@@ -72,12 +83,12 @@ export default function Login({ navigation }) {
           <Text style={styles.buttonText}>{loading ? 'Ingresando...' : 'Ingresar'}</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+        <TouchableOpacity onPress={() => navigation.navigate('Register', { tipoUsuario })}>
           <Text style={styles.link}>¿No tenés cuenta? Registrate</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => navigation.replace('Welcome')}>
-          <Text style={styles.link}>← Volver al inicio</Text>
+        <TouchableOpacity onPress={() => navigation.replace('Login1')}>
+          <Text style={styles.link}>← Volver a selección de usuario</Text>
         </TouchableOpacity>
       </View>
     </View>

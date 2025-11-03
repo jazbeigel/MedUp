@@ -3,6 +3,7 @@ import { NavigationContainer } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 
 import Login from './Frontend/componentes/auth/Login'
+import Login1 from './Frontend/componentes/auth/Login1'
 import Register from './Frontend/componentes/auth/Registro'
 import HomeProfesional from './Frontend/componentes/Home/HomeProfesional'
 import HomePaciente from './Frontend/componentes/Home/HomePaciente'
@@ -19,6 +20,7 @@ export default function App() {
       <Stack.Navigator initialRouteName="Welcome" screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Welcome" component={WelcomeScreen} /> 
         <Stack.Screen name="Login" component={Login} />
+        <Stack.Screen name="Login1" component={Login1} />
         <Stack.Screen name="Register" component={Register} />
         <Stack.Screen name="HomeProfesional" component={HomeProfesional} />
         <Stack.Screen name="HomePaciente" component={HomePaciente} />

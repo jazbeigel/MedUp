@@ -65,10 +65,16 @@ router.get('/:id', async (req, res) => {
         const { contrasena, password: _pwd, ...safeUser } = profesional;
   
         // (Opcional) acá podrías generar un JWT si querés:
-        const token = jwt.sign({ sub: profesional.id, role: 'profesional' }, process.env.JWT_SECRET, { expiresIn: '1h' });
-         return res.status(StatusCodes.OK).json({ user: safeUser, token });
+        //const token = jwt.sign({ sub: profesional.id, role: 'profesional' }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        // return res.status(StatusCodes.OK).json({ user: safeUser, token });
   
         return res.status(StatusCodes.OK).json({ user: safeUser });
+        
+
+
+
+
+
       } catch (error) {
         console.error('Error en /api/profesionales/login:', error);
         return res
