@@ -22,25 +22,20 @@ export default function Login({ navigation }) {
     try {
       const resp = await fetch(`${API_BASE_URL}/api/pacientes/login`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }, // ojo: headers en minúscula
+        headers: { 'Content-Type': 'application/json' }, 
         body: JSON.stringify({ email, password }),
       })
 
       const data = await resp.json().catch(() => ({}))
 
       if (!resp.ok) {
-        // el controller devuelve { error: '...' }
         throw new Error(data?.error || 'Credenciales inválidas')
       }
 
-      // data = { user: {...} }  (sin contrasena)
       const user = data.user
       if (!user) throw new Error('Respuesta inválida del servidor')
 
-      // si más adelante devolvés token: const { user, token } = data
-
-      // Navegación: usá el NOMBRE de la ruta
-      navigation.replace('Home', { user })
+      navigation.replace('HomePaciente', { user })
     } catch (e) {
       console.error('Login error:', e)
       setError(e.message || 'Error al iniciar sesión')
