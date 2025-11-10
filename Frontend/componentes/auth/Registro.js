@@ -11,7 +11,6 @@ import {
 } from 'react-native'
 import { Picker } from '@react-native-picker/picker'
 
-// 🔧 URL flexible según la plataforma
 const API_PORT = 3000
 const API_BASE_URL =
   Platform.OS === 'web'
@@ -41,7 +40,6 @@ export default function Register({ navigation }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
-  // 🔹 Carga de especialidades
   useEffect(() => {
     if (userType === 'doctor') {
       const fetchEspecialidades = async () => {
@@ -62,7 +60,6 @@ export default function Register({ navigation }) {
     }
   }, [userType])
 
-  // 🔹 Registro de usuario
   const handleRegister = async () => {
     setError(null)
 
@@ -85,8 +82,7 @@ export default function Register({ navigation }) {
 
     setLoading(true)
 
-    try {
-      // Normalizar fecha si vino con barras
+    try { //cambia la fecha
       const fechaNormalizada =
         userType === 'paciente' ? (fecha_nacimiento || '').replaceAll('/', '-') : undefined
 
@@ -96,7 +92,7 @@ export default function Register({ navigation }) {
               tipo: 'paciente',
               nombre_completo: nombreCompleto,
               email,
-              password, // el backend mapea password -> contrasena
+              password, 
               dni,
               fecha_nacimiento: fechaNormalizada || fecha_nacimiento,
               direccion,
@@ -106,7 +102,7 @@ export default function Register({ navigation }) {
               tipo: 'profesional',
               nombre_completo: nombreCompleto,
               email,
-              password, // el backend mapea password -> contrasena
+              password, 
               matricula,
               id_especialidad: especialidadId ? parseInt(especialidadId, 10) : null,
               telefono,
@@ -146,7 +142,6 @@ export default function Register({ navigation }) {
           ? result
           : { id: typeof result === 'number' ? result : result?.id, ...userData }
 
-      // Redirigir a Home y limpiar historial
       alert('Registro exitoso!!!!!')
       navigation.reset({
         index: 0,
@@ -165,7 +160,6 @@ export default function Register({ navigation }) {
     }
   }
 
-  // 🔹 Pantalla de selección inicial
   if (!userType) {
     return (
       <View style={styles.selectContainer}>
@@ -183,7 +177,6 @@ export default function Register({ navigation }) {
     )
   }
 
-  // 🔹 Formulario principal
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -267,7 +260,6 @@ export default function Register({ navigation }) {
   )
 }
 
-// 🎨 Estilos
 const styles = StyleSheet.create({
   selectContainer: {
     flex: 1,

@@ -15,7 +15,8 @@ router.get('', async (req, res) => {
     const safe = (returnArray ?? []).map(({ contrasena, password, ...r }) => r);
     res.status(StatusCodes.OK).json(safe);
   } catch (error) {
-    console.error('GET /api/pacientes error:', error);
+    
+    console.error('POST /api/pacientes error:', error); 
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: 'Error interno.' });
   }
 });
