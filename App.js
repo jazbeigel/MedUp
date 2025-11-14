@@ -26,7 +26,7 @@ export default function App() {
         <Stack.Screen name="HomePaciente" component={HomePaciente} />
         <Stack.Screen name="Info" component={InfoScreen} />
         <Stack.Screen name="Profile" component={ProfileScreen} />
-        <Stack.Screen name="Agendar Turno" component={AgendarTurno}/>
+        <Stack.Screen name="AgendarTurno" component={AgendarTurno}/>
       </Stack.Navigator>
     </NavigationContainer>
   )

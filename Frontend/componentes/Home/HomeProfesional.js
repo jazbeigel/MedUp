@@ -90,21 +90,14 @@ export default function HomeProfesional({ navigation }) {
             </View>
           </View>
 
-          <TouchableOpacity style={styles.calendarButton}>
-            <Text style={styles.calendarText}>Calendario</Text>
-          </TouchableOpacity>
         </View>
 
       </ScrollView>
 
       {/* FOOTER */}
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.footerBtn} onPress={() => navigation.navigate('HomeProfesional')}>
-          <Text style={styles.footerBtnText}>Inicio</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.footerBtn} onPress={() => navigation.navigate('Profile')}>
-          <Text style={styles.footerBtnText}>Perfil</Text>
-        </TouchableOpacity>
+  
+        
         <TouchableOpacity style={styles.footerBtn} onPress={handleLogout}>
           <Text style={styles.footerBtnText}>Salir</Text>
         </TouchableOpacity>
