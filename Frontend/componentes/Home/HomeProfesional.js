@@ -1,17 +1,130 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image, Platform } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../../utils/supabaseClient';
 
-export default function HomeProfesional({ navigation }) {
+const API_PORT = 3000;
+const API_BASE_URL =
+  Platform.OS === 'web'
+    ? `http://${window.location.hostname}:${API_PORT}`
+    : Platform.OS === 'android'
+    ? `http://10.0.2.2:${API_PORT}`
+    : `http://localhost:${API_PORT}`;
+
+const STATUS_LABELS = {
+  pendiente: 'Pendiente',
+  confirmado: 'Confirmado',
+  rechazado: 'Rechazado',
+  cancelado: 'Cancelado',
+};
+
+const formatFechaHora = (value) => {
+  if (!value) return 'Fecha a coordinar';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Fecha a coordinar';
+  const fecha = date.toLocaleDateString();
+  const hora = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  return `${fecha} - ${hora}`;
+};
+
+export default function HomeProfesional({ navigation, route }) {
+  const [professional, setProfessional] = useState(route?.params?.user ?? null);
+  const [solicitudes, setSolicitudes] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [pacientes, setPacientes] = useState([]);
+  const [especialidades, setEspecialidades] = useState([]);
+
+  useEffect(() => {
+    if (route?.params?.user) {
+      setProfessional(route.params.user);
+    }
+  }, [route?.params?.user]);
+
+  useEffect(() => {
+    const fetchCatalogos = async () => {
+      try {
+        const [pacRes, espRes] = await Promise.all([
+          fetch(`${API_BASE_URL}/api/pacientes`),
+          fetch(`${API_BASE_URL}/api/especialidades`),
+        ]);
+        const pacData = pacRes.ok ? await pacRes.json().catch(() => []) : [];
+        const espData = espRes.ok ? await espRes.json().catch(() => []) : [];
+        setPacientes(Array.isArray(pacData) ? pacData : []);
+        setEspecialidades(Array.isArray(espData) ? espData : []);
+      } catch (err) {
+        console.error('Error al cargar catálogos auxiliares del profesional:', err);
+        setPacientes([]);
+        setEspecialidades([]);
+      }
+    };
+
+    fetchCatalogos();
+  }, []);
+
+  const pacientesMap = useMemo(() => {
+    return (pacientes ?? []).reduce((acc, paciente) => {
+      acc[paciente.id] = paciente.nombre_completo;
+      return acc;
+    }, {});
+  }, [pacientes]);
+
+  const especialidadesMap = useMemo(() => {
+    return (especialidades ?? []).reduce((acc, esp) => {
+      acc[esp.id] = esp.nombre;
+      return acc;
+    }, {});
+  }, [especialidades]);
+
+  const fetchSolicitudes = useCallback(async () => {
+    if (!professional?.id) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const url = `${API_BASE_URL}/api/turnos?profesionalId=${professional.id}`;
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('No se pudieron obtener las solicitudes.');
+      const contentType = response.headers.get('content-type') ?? '';
+      if (!contentType.includes('application/json')) throw new Error('Respuesta inválida.');
+      const data = await response.json();
+      setSolicitudes(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Error al obtener solicitudes para el profesional:', err);
+      setError(err?.message ?? 'Error al cargar las solicitudes.');
+      setSolicitudes([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [professional?.id]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchSolicitudes();
+    }, [fetchSolicitudes])
+  );
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigation.replace('Login');
   };
 
+  const handleEstado = async (solicitudId, estado) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/turnos/${solicitudId}/estado`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ estado }),
+      });
+      if (!response.ok) throw new Error('No se pudo actualizar el estado.');
+      await fetchSolicitudes();
+    } catch (err) {
+      console.error('Error actualizando estado de solicitud:', err);
+      setError(err?.message ?? 'Error al actualizar el estado.');
+    }
+  };
+
   return (
     <View style={styles.container}>
-      
-      {/* HEADER */}
       <View style={styles.header}>
         <View style={styles.headerContent}>
           <Image
@@ -19,7 +132,11 @@ export default function HomeProfesional({ navigation }) {
             style={styles.headerImage}
           />
           <View style={{ flex: 1 }}>
-            <Text style={styles.headerTitle}>Conocé más sobre nuestra app</Text>
+            <Text style={styles.headerTitle}>
+              {professional?.nombre_completo
+                ? `Bienvenido Dr/a ${professional.nombre_completo}`
+                : 'Conocé más sobre nuestra app'}
+            </Text>
             <TouchableOpacity style={styles.headerButton} onPress={() => navigation.navigate('Info')}>
               <Text style={styles.headerButtonText}>Más información</Text>
             </TouchableOpacity>
@@ -27,90 +144,90 @@ export default function HomeProfesional({ navigation }) {
         </View>
       </View>
 
-      {/* BODY */}
-      <ScrollView style={styles.body} contentContainerStyle={{ paddingBottom: 100 }}>
-        
-        <Text style={styles.sectionTitle}>Mis pacientes</Text>
+      <ScrollView style={styles.body} contentContainerStyle={{ paddingBottom: 120 }}>
+        <Text style={styles.sectionTitle}>Solicitudes de turnos</Text>
 
-        <View style={styles.pacienteContainer}>
-          <View style={styles.pacienteCard}>
-            <Image
-              source={{ uri: 'https://randomuser.me/api/portraits/men/32.jpg' }}
-              style={styles.pacienteFoto}
-            />
-            <Text style={styles.pacienteName}>Jose Perez</Text>
-            <Text style={styles.pacienteEdad}>Edad: 40</Text>
-            <TouchableOpacity style={styles.verMasBtn}>
-              <Text style={styles.verMasText}>Ver más</Text>
-            </TouchableOpacity>
-          </View>
+        {loading && <Text style={styles.helperText}>Cargando solicitudes...</Text>}
+        {error && !loading && <Text style={[styles.helperText, { color: 'red' }]}>{error}</Text>}
+        {!loading && !solicitudes.length && !error && (
+          <Text style={styles.helperText}>Aún no tenés solicitudes nuevas.</Text>
+        )}
 
-          <View style={styles.pacienteCard}>
-            <Image
-              source={{ uri: 'https://randomuser.me/api/portraits/women/44.jpg' }}
-              style={styles.pacienteFoto}
-            />
-            <Text style={styles.pacienteName}>Maria Rojas</Text>
-            <Text style={styles.pacienteEdad}>Edad: 36</Text>
-            <TouchableOpacity style={styles.verMasBtn}>
-              <Text style={styles.verMasText}>Ver más</Text>
-            </TouchableOpacity>
-          </View>
+        <View style={styles.turnosContainer}>
+          {solicitudes.map((solicitud) => {
+            const pacienteNombre =
+              solicitud.paciente_nombre ??
+              pacientesMap[solicitud.paciente_id] ??
+              'Paciente sin nombre';
 
-          <View style={styles.pacienteCard}>
-            <Image
-              source={{ uri: 'https://randomuser.me/api/portraits/men/56.jpg' }}
-              style={styles.pacienteFoto}
-            />
-            <Text style={styles.pacienteName}>Jorge Lopez</Text>
-            <Text style={styles.pacienteEdad}>Edad: 47</Text>
-            <TouchableOpacity style={styles.verMasBtn}>
-              <Text style={styles.verMasText}>Ver más</Text>
-            </TouchableOpacity>
-          </View>
+            const especialidadNombre =
+              solicitud.especialidad_nombre ??
+              especialidadesMap[solicitud.especialidad_id] ??
+              'General';
+
+            return (
+              <View key={solicitud.id} style={styles.turnoCard}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                  <View style={{ flex: 1, paddingRight: 8 }}>
+                    <Text style={styles.turnoName}>Paciente: {pacienteNombre}</Text>
+                    <Text style={styles.turnoDetalle}>
+                      Especialidad: {especialidadNombre}
+                    </Text>
+                    <Text style={styles.turnoDetalle}>
+                      Fecha: {formatFechaHora(solicitud.fecha)}
+                    </Text>
+                    {solicitud.descripcion ? (
+                      <Text style={styles.turnoDetalle}>Motivo: {solicitud.descripcion}</Text>
+                    ) : null}
+                  </View>
+                  <View style={styles.estadoContainer}>
+                    <Text style={styles.estadoLabel}>Estado</Text>
+                    <View
+                      style={[
+                        styles.estadoPill,
+                        solicitud.estado === 'confirmado' && styles.estadoOk,
+                        solicitud.estado === 'rechazado' && styles.estadoDanger,
+                      ]}
+                    >
+                      <Text style={styles.estadoText}>
+                        {STATUS_LABELS[solicitud.estado?.toLowerCase?.()] ??
+                          solicitud.estado ??
+                          'Pendiente'}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+                <View style={styles.turnoActions}>
+                  <TouchableOpacity
+                    style={[styles.actionBtn, styles.acceptBtn]}
+                    onPress={() => handleEstado(solicitud.id, 'confirmado')}
+                  >
+                    <Text style={styles.actionText}>Confirmar</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.actionBtn, styles.rejectBtn]}
+                    onPress={() => handleEstado(solicitud.id, 'rechazado')}
+                  >
+                    <Text style={styles.actionText}>Rechazar</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            );
+          })}
         </View>
-
-        <TouchableOpacity style={styles.addButton}>
-          <Text style={styles.addButtonText}>+ Agregar paciente</Text>
-        </TouchableOpacity>
-
-        {/* Espacio adicional antes de turnos */}
-        <View style={{ marginTop: 35 }}>
-          <Text style={styles.sectionTitle}>Próximos turnos</Text>
-
-          <View style={styles.turnosContainer}>
-            <View style={styles.turnoCard}>
-              <Text style={styles.turnoName}>Maria Rojas - Cardiología</Text>
-              <Text style={styles.turnoFecha}>09 Jul - 12:00</Text>
-            </View>
-
-            <View style={styles.turnoCard}>
-              <Text style={styles.turnoName}>Jose Perez - Medicina Interna</Text>
-              <Text style={styles.turnoFecha}>20 Oct - 15:00</Text>
-            </View>
-          </View>
-
-        </View>
-
       </ScrollView>
 
-      {/* FOOTER */}
       <View style={styles.footer}>
-  
-        
         <TouchableOpacity style={styles.footerBtn} onPress={handleLogout}>
           <Text style={styles.footerBtnText}>Salir</Text>
         </TouchableOpacity>
       </View>
-
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F7F8FC' },
-
-  // HEADER
   header: {
     backgroundColor: '#1A1A6E',
     paddingVertical: 25,
@@ -150,60 +267,9 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   headerButtonText: { color: '#1A1A6E', fontWeight: 'bold', fontSize: 13 },
-
-  // BODY
   body: { flex: 1, paddingHorizontal: 20, marginTop: 15 },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#222', marginVertical: 15 },
-
-  // PACIENTES
-  pacienteContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  pacienteCard: {
-    backgroundColor: '#fff',
-    width: '30%',
-    borderRadius: 15,
-    alignItems: 'center',
-    paddingVertical: 15,
-    paddingHorizontal: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 3,
-    position: 'relative',
-  },
-  pacienteFoto: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    marginBottom: 10,
-  },
-  pacienteName: { fontSize: 15, fontWeight: '600', color: '#333', textAlign: 'center' },
-  pacienteEdad: { fontSize: 13, color: '#777', marginBottom: 10 },
-  verMasBtn: {
-    backgroundColor: '#1A1A6E',
-    paddingVertical: 6,
-    paddingHorizontal: 15,
-    borderRadius: 20,
-    position: 'absolute',
-    bottom: 10,
-  },
-  verMasText: { color: '#fff', fontSize: 12 },
-
-  addButton: {
-    marginTop: 15,
-    backgroundColor: '#fff',
-    paddingVertical: 12,
-    borderRadius: 30,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#1A1A6E',
-  },
-  addButtonText: { color: '#1A1A6E', fontWeight: '600' },
-
-  // TURNOS
+  helperText: { fontSize: 14, color: '#555', marginBottom: 10 },
   turnosContainer: { marginTop: 10 },
   turnoCard: {
     backgroundColor: '#fff',
@@ -216,19 +282,33 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 2,
   },
-  turnoName: { fontWeight: '600', color: '#333' },
-  turnoFecha: { color: '#777', marginTop: 4 },
-
-  calendarButton: {
-    backgroundColor: '#1A1A6E',
-    borderRadius: 30,
-    alignItems: 'center',
-    paddingVertical: 12,
-    marginTop: 15,
+  turnoName: { fontWeight: '600', color: '#333', fontSize: 16 },
+  turnoDetalle: { color: '#555', marginTop: 4 },
+  estadoContainer: {
+    alignItems: 'flex-end',
+    justifyContent: 'flex-start',
   },
-  calendarText: { color: '#fff', fontWeight: 'bold', fontSize: 15 },
-
-  // FOOTER
+  estadoLabel: { fontSize: 12, color: '#777', marginBottom: 4 },
+  estadoPill: {
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    backgroundColor: '#FFF5CC',
+  },
+  estadoOk: { backgroundColor: '#E3F8D2' },
+  estadoDanger: { backgroundColor: '#FFE1E1' },
+  estadoText: { fontSize: 12, fontWeight: '600', color: '#1A1A6E' },
+  turnoActions: { flexDirection: 'row', marginTop: 12, justifyContent: 'space-between' },
+  actionBtn: {
+    flex: 1,
+    paddingVertical: 8,
+    borderRadius: 20,
+    alignItems: 'center',
+    marginHorizontal: 4,
+  },
+  acceptBtn: { backgroundColor: '#1A1A6E' },
+  rejectBtn: { backgroundColor: '#FF6161' },
+  actionText: { color: '#fff', fontWeight: '600' },
   footer: {
     flexDirection: 'row',
     justifyContent: 'space-around',

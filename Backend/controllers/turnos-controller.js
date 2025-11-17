@@ -4,17 +4,30 @@ import TurnosService from './../services/turnos-service.js';
 
 const router = Router();
 const currentService = new TurnosService();
+const ALLOWED_STATUSES = ['pendiente', 'confirmado', 'rechazado', 'cancelado'];
+
+const normalizeFilters = (query = {}) => {
+  const filters = {};
+  if (query.pacienteId && !Number.isNaN(Number(query.pacienteId))) {
+    filters.pacienteId = Number(query.pacienteId);
+  }
+  if (query.profesionalId && !Number.isNaN(Number(query.profesionalId))) {
+    filters.profesionalId = Number(query.profesionalId);
+  }
+  if (query.estado && ALLOWED_STATUSES.includes(String(query.estado).toLowerCase())) {
+    filters.estado = String(query.estado).toLowerCase();
+  }
+  return filters;
+};
 
 router.get('', async (req, res) => {
   try {
-    const returnArray = await currentService.getAllAsync();
-    if (returnArray != null) {
-      res.status(StatusCodes.OK).json(returnArray);
-    } else {
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send('Error interno.');
-    }
+    const filters = normalizeFilters(req.query);
+    const returnArray = await currentService.listAsync(filters);
+    res.status(StatusCodes.OK).json(returnArray ?? []);
   } catch (error) {
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send('Error interno.');
+    console.error('GET /api/turnos error:', error);
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: 'Error interno.' });
   }
 });
 
@@ -34,14 +47,31 @@ router.get('/:id', async (req, res) => {
 
 router.post('', async (req, res) => {
   try {
-    const { paciente_id, profesional_id, fecha } = req.body;
+    const { paciente_id, profesional_id, fecha, descripcion, estado, especialidad_id } = req.body ?? {};
     if (!paciente_id || !profesional_id || !fecha) {
       return res.status(400).json({
         ok: false,
         message: 'Faltan datos obligatorios: paciente_id, profesional_id y fecha',
       });
     }
-    const turno = { paciente_id, profesional_id, fecha };
+    const normalizedEstado = ALLOWED_STATUSES.includes(String(estado).toLowerCase())
+      ? String(estado).toLowerCase()
+      : 'pendiente';
+
+    const fechaValida = new Date(fecha);
+    if (Number.isNaN(fechaValida.getTime())) {
+      return res.status(400).json({ ok: false, message: 'La fecha u hora no son válidas.' });
+    }
+
+    const turno = {
+      paciente_id: Number(paciente_id),
+      profesional_id: Number(profesional_id),
+      fecha: fechaValida.toISOString(),
+      descripcion: descripcion ?? null,
+      estado: normalizedEstado,
+      especialidad_id: especialidad_id ? Number(especialidad_id) : null,
+    };
+
     const newId = await currentService.createAsync(turno);
     if (newId > 0) {
       return res.status(201).json({
@@ -52,35 +82,23 @@ router.post('', async (req, res) => {
     }
     res.status(500).json({ ok: false, message: 'Error al crear el turno' });
   } catch (error) {
+    console.error('POST /api/turnos error:', error);
     res.status(500).json({ ok: false, message: 'Error interno del servidor' });
-  }
-});
-
-router.delete('/:id', async (req, res) => {
-  const id = req.params.id;
-  try {
-    const rowCount = await currentService.deleteByIdAsync(id);
-    if (rowCount != 0) {
-      res.status(StatusCodes.OK).json(rowCount);
-    } else {
-      res.status(StatusCodes.NOT_FOUND).send(`No se encontro la entidad (id:${id}).`);
-    }
-  } catch (error) {
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send('Error interno.');
   }
 });
 
 router.put('/:id', async (req, res) => {
   try {
     const id = req.params.id;
-    const { estado, paciente_id, profesional_id, fecha } = req.body;
+    const { estado, paciente_id, profesional_id, fecha, descripcion, especialidad_id } = req.body;
 
     // Validación mínima: que venga al menos un campo a actualizar
     if (
       estado === undefined &&
       paciente_id === undefined &&
       profesional_id === undefined &&
-      fecha === undefined
+      fecha === undefined &&
+      descripcion === undefined
     ) {
       return res.status(400).json({
         ok: false,
@@ -93,7 +111,9 @@ router.put('/:id', async (req, res) => {
       estado,
       paciente_id,
       profesional_id,
-      fecha
+      fecha,
+      descripcion,
+      especialidad_id,
     });
 
     if (rows > 0) {
@@ -107,5 +127,31 @@ router.put('/:id', async (req, res) => {
   }
 });
 
+router.patch('/:id/estado', async (req, res) => {
+  const id = Number(req.params.id);
+  if (Number.isNaN(id)) {
+    return res.status(StatusCodes.BAD_REQUEST).json({ error: 'ID inválido.' });
+  }
+
+  try {
+    const { estado } = req.body ?? {};
+    const normalized = String(estado ?? '').toLowerCase();
+    if (!ALLOWED_STATUSES.includes(normalized)) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        error: `Estado inválido. Valores permitidos: ${ALLOWED_STATUSES.join(', ')}`,
+      });
+    }
+
+    const rows = await currentService.updateEstadoAsync(id, normalized);
+    if (!rows) {
+      return res.status(StatusCodes.NOT_FOUND).json({ error: 'Turno no encontrado.' });
+    }
+
+    return res.status(StatusCodes.OK).json({ ok: true, message: 'Estado actualizado.' });
+  } catch (error) {
+    console.error('PATCH /api/turnos/:id/estado error:', error);
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error: 'Error interno.' });
+  }
+});
 
 export default router;
