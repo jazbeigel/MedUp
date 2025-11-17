@@ -160,8 +160,20 @@ export default function HomePaciente({ navigation, route }) {
                 {solicitud.descripcion ? (
                   <Text style={styles.turnoSintomas}>Motivo: {solicitud.descripcion}</Text>
                 ) : null}
-                <View style={styles.estadoBadge}>
-                  <Text style={styles.estadoText}>
+                <View
+                  style={[
+                    styles.estadoBadge,
+                    solicitud.estado === 'confirmado' && styles.estadoBadgeOk,
+                    solicitud.estado === 'rechazado' && styles.estadoBadgeDanger,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.estadoText,
+                      solicitud.estado === 'rechazado' && { color: '#B01717' },
+                      solicitud.estado === 'confirmado' && { color: '#147012' },
+                    ]}
+                  >
                     {(solicitud.estado ?? 'pendiente').toUpperCase()}
                   </Text>
                 </View>
@@ -236,6 +248,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginTop: 8,
   },
+  estadoBadgeOk: { backgroundColor: '#DDF6E3' },
+  estadoBadgeDanger: { backgroundColor: '#FFE4E6' },
   estadoText: { color: '#1A1A6E', fontWeight: '700', fontSize: 12 },
 
   calendarButton: { backgroundColor: '#1A1A6E', borderRadius: 30, alignItems: 'center', paddingVertical: 12, marginTop: 15 },

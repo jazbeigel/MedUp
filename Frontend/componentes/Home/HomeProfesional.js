@@ -32,6 +32,8 @@ export default function HomeProfesional({ navigation, route }) {
   const [solicitudes, setSolicitudes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [processingId, setProcessingId] = useState(null);
+  const [statusMessage, setStatusMessage] = useState(null);
   const [pacientes, setPacientes] = useState([]);
   const [especialidades, setEspecialidades] = useState([]);
 
@@ -109,17 +111,26 @@ export default function HomeProfesional({ navigation, route }) {
   };
 
   const handleEstado = async (solicitudId, estado) => {
+    setProcessingId(solicitudId);
+    setStatusMessage(null);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/turnos/${solicitudId}/estado`, {
-        method: 'PATCH',
+      const response = await fetch(`${API_BASE_URL}/api/turnos/${solicitudId}`, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ estado }),
       });
       if (!response.ok) throw new Error('No se pudo actualizar el estado.');
       await fetchSolicitudes();
+      setStatusMessage(
+        estado === 'confirmado'
+          ? 'Turno confirmado correctamente.'
+          : 'Turno rechazado.'
+      );
     } catch (err) {
       console.error('Error actualizando estado de solicitud:', err);
       setError(err?.message ?? 'Error al actualizar el estado.');
+    } finally {
+      setProcessingId(null);
     }
   };
 
@@ -148,6 +159,9 @@ export default function HomeProfesional({ navigation, route }) {
         <Text style={styles.sectionTitle}>Solicitudes de turnos</Text>
 
         {loading && <Text style={styles.helperText}>Cargando solicitudes...</Text>}
+        {!loading && statusMessage && (
+          <Text style={[styles.helperText, { color: '#1A1A6E' }]}>{statusMessage}</Text>
+        )}
         {error && !loading && <Text style={[styles.helperText, { color: 'red' }]}>{error}</Text>}
         {!loading && !solicitudes.length && !error && (
           <Text style={styles.helperText}>Aún no tenés solicitudes nuevas.</Text>
@@ -201,12 +215,16 @@ export default function HomeProfesional({ navigation, route }) {
                   <TouchableOpacity
                     style={[styles.actionBtn, styles.acceptBtn]}
                     onPress={() => handleEstado(solicitud.id, 'confirmado')}
+                    disabled={processingId === solicitud.id}
                   >
-                    <Text style={styles.actionText}>Confirmar</Text>
+                    <Text style={styles.actionText}>
+                      {processingId === solicitud.id ? 'Procesando...' : 'Confirmar'}
+                    </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[styles.actionBtn, styles.rejectBtn]}
                     onPress={() => handleEstado(solicitud.id, 'rechazado')}
+                    disabled={processingId === solicitud.id}
                   >
                     <Text style={styles.actionText}>Rechazar</Text>
                   </TouchableOpacity>

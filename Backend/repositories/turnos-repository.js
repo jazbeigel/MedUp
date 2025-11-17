@@ -108,7 +108,7 @@ export default class TurnosRepository {
         entity.paciente_id,
         entity.profesional_id,
         entity.fecha,
-        new Date(),
+        entity.creado_el ?? new Date(),
         entity.estado ?? 'pendiente',
         entity.descripcion ?? null,
         entity.especialidad_id ?? null,
@@ -116,6 +116,24 @@ export default class TurnosRepository {
 
       const resultPg = await this.getDBPool().query(sql, values);
       newId = resultPg.rows[0].id;
+
+      if (
+        newId &&
+        (entity.descripcion !== undefined || entity.especialidad_id !== undefined)
+      ) {
+        const updateSql = `
+          UPDATE turnos SET
+            descripcion = COALESCE($2, descripcion),
+            especialidad_id = COALESCE($3, especialidad_id)
+          WHERE id = $1
+        `;
+        const updateValues = [
+          newId,
+          entity.descripcion ?? null,
+          entity.especialidad_id ?? null,
+        ];
+        await this.getDBPool().query(updateSql, updateValues);
+      }
     } catch (error) {
       LogHelper.logError(error);
       throw error;

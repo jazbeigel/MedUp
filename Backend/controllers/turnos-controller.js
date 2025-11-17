@@ -48,6 +48,7 @@ router.get('/:id', async (req, res) => {
 router.post('', async (req, res) => {
   try {
     const { paciente_id, profesional_id, fecha, descripcion, estado, especialidad_id } = req.body ?? {};
+    console.log('POST /api/turnos body ->', req.body);
     if (!paciente_id || !profesional_id || !fecha) {
       return res.status(400).json({
         ok: false,
