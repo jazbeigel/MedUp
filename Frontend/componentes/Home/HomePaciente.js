@@ -20,6 +20,14 @@ const formatFechaHora = (value) => {
   return `${fecha} - ${hora}`;
 };
 
+// 🔥 Limpia valores invalidos que vienen como string "null"
+const limpiar = (v) => {
+  if (v === null || v === undefined) return null;
+  if (v === "null") return null;
+  if (v === "") return null;
+  return v;
+};
+
 export default function HomePaciente({ navigation, route }) {
   const [patient, setPatient] = useState(route?.params?.user ?? null);
   const [solicitudes, setSolicitudes] = useState([]);
@@ -141,15 +149,20 @@ export default function HomePaciente({ navigation, route }) {
         <View style={styles.turnosContainer}>
           {solicitudes.map((solicitud) => {
             const profesionalInfo = profesionalesMap[solicitud.profesional_id];
+
             const nombreProfesional =
-              solicitud.profesional_nombre ?? profesionalInfo?.nombre ?? 'A confirmar';
+              limpiar(solicitud.profesional_nombre) ??
+              profesionalInfo?.nombre ??
+              'A confirmar';
 
             const especialidadNombre =
-              solicitud.especialidad_nombre ??
-              especialidadesMap[solicitud.especialidad_id] ??
-              (profesionalInfo?.especialidadId
-                ? especialidadesMap[profesionalInfo.especialidadId]
-                : null) ??
+              limpiar(solicitud.especialidad_nombre) ??
+              limpiar(especialidadesMap[solicitud.especialidad_id]) ??
+              limpiar(
+                profesionalInfo?.especialidadId
+                  ? especialidadesMap[profesionalInfo.especialidadId]
+                  : null
+              ) ??
               'General';
 
             return (
@@ -157,9 +170,11 @@ export default function HomePaciente({ navigation, route }) {
                 <Text style={styles.turnoName}>Profesional: {nombreProfesional}</Text>
                 <Text style={styles.turnoDetalle}>Especialidad: {especialidadNombre}</Text>
                 <Text style={styles.turnoFecha}>{formatFechaHora(solicitud.fecha)}</Text>
+
                 {solicitud.descripcion ? (
                   <Text style={styles.turnoSintomas}>Motivo: {solicitud.descripcion}</Text>
                 ) : null}
+
                 <View
                   style={[
                     styles.estadoBadge,
@@ -199,7 +214,6 @@ export default function HomePaciente({ navigation, route }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F7F8FC' },
 
-  // HEADER
   header: {
     backgroundColor: '#1A1A6E',
     paddingVertical: 25,
@@ -218,12 +232,10 @@ const styles = StyleSheet.create({
   headerButton: { backgroundColor: '#fff', paddingVertical: 6, paddingHorizontal: 20, borderRadius: 20, alignSelf: 'flex-start' },
   headerButtonText: { color: '#1A1A6E', fontWeight: 'bold', fontSize: 13 },
 
-  // BODY
   body: { flex: 1, paddingHorizontal: 20, marginTop: 15 },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#222', marginVertical: 15 },
   helperText: { fontSize: 14, color: '#555', marginBottom: 10 },
 
-  // TURNOS
   turnosContainer: { marginTop: 10 },
   turnoCard: {
     backgroundColor: '#fff',
@@ -240,6 +252,7 @@ const styles = StyleSheet.create({
   turnoDetalle: { color: '#555', marginTop: 4 },
   turnoFecha: { color: '#777', marginTop: 4 },
   turnoSintomas: { color: '#555', marginTop: 4 },
+
   estadoBadge: {
     alignSelf: 'flex-start',
     backgroundColor: '#E6E9FF',
@@ -252,10 +265,6 @@ const styles = StyleSheet.create({
   estadoBadgeDanger: { backgroundColor: '#FFE4E6' },
   estadoText: { color: '#1A1A6E', fontWeight: '700', fontSize: 12 },
 
-  calendarButton: { backgroundColor: '#1A1A6E', borderRadius: 30, alignItems: 'center', paddingVertical: 12, marginTop: 15 },
-  calendarText: { color: '#fff', fontWeight: 'bold', fontSize: 15 },
-
-  // FOOTER
   footer: { flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 15, backgroundColor: '#1A1A6E', borderTopLeftRadius: 25, borderTopRightRadius: 25 },
   footerBtn: { backgroundColor: '#fff', paddingVertical: 8, paddingHorizontal: 25, borderRadius: 25 },
   footerBtnText: { color: '#1A1A6E', fontWeight: '600' },

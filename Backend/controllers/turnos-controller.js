@@ -68,7 +68,7 @@ router.post('', async (req, res) => {
       paciente_id: Number(paciente_id),
       profesional_id: Number(profesional_id),
       fecha: fechaValida.toISOString(),
-      descripcion: descripcion ?? null,
+      descripcion: descripcion,
       estado: normalizedEstado,
       especialidad_id: especialidad_id ? Number(especialidad_id) : null,
     };

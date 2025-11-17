@@ -93,6 +93,8 @@ export default function AgendarTurno({ navigation, route }) {
 
     setSending(true)
     try {
+      console.log("sintomas: "+sintomas);
+      console.log(`${API_BASE_URL}/api/turnos`);
       const response = await fetch(`${API_BASE_URL}/api/turnos`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

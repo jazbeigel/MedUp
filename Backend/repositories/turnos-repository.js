@@ -1,96 +1,79 @@
-import pkg from 'pg';
-import config from './../configs/db-config.js';
 import LogHelper from './../helpers/log-helper.js';
-
-const { Pool } = pkg;
+import PgPool from './../helpers/pg-pool.js';
 
 export default class TurnosRepository {
   constructor() {
-    console.log('TurnosRepository.constructor()');
-    this.DBPool = null;
+    this.db = PgPool;
   }
 
-  getDBPool = () => {
-    if (this.DBPool == null) {
-      this.DBPool = new Pool(config);
-    }
-    return this.DBPool;
-  };
+  getDBPool() {
+    return this.db.getPool();
+  }
 
-  listAsync = async (filters = {}) => {
-    const whereParts = [];
-    const values = [];
-
-    if (filters.pacienteId) {
-      values.push(filters.pacienteId);
-      whereParts.push(`t.paciente_id = $${values.length}`);
-    }
-    if (filters.profesionalId) {
-      values.push(filters.profesionalId);
-      whereParts.push(`t.profesional_id = $${values.length}`);
-    }
-    if (filters.estado) {
-      values.push(filters.estado);
-      whereParts.push(`LOWER(t.estado) = LOWER($${values.length})`);
-    }
-
-    const whereClause = whereParts.length ? `WHERE ${whereParts.join(' AND ')}` : '';
-
+  listAsync = async (filters) => {
     try {
-      const sql = `
-        SELECT
-          t.*,
-          p.nombre_completo AS paciente_nombre,
-          p.email AS paciente_email,
-          prof.nombre_completo AS profesional_nombre,
-          prof.email AS profesional_email,
-          esp_turno.nombre AS especialidad_nombre
+      let sql = `
+        SELECT t.*, 
+               p.nombre AS paciente_nombre, 
+               pr.nombre AS profesional_nombre,
+               e.descripcion AS especialidad
         FROM turnos t
-        LEFT JOIN pacientes p ON p.id = t.paciente_id
-        LEFT JOIN profesionales prof ON prof.id = t.profesional_id
-        LEFT JOIN especialidades esp_turno ON esp_turno.id = COALESCE(t.especialidad_id, prof.id_especialidad)
-        ${whereClause}
-        ORDER BY t.creado_el DESC
+        LEFT JOIN pacientes p ON t.paciente_id = p.id
+        LEFT JOIN profesionales pr ON t.profesional_id = pr.id
+        LEFT JOIN especialidades e ON t.especialidad_id = e.id
+        WHERE 1 = 1
       `;
+      
+      const values = [];
+      let i = 1;
 
-      const resultPg = await this.getDBPool().query(sql, values);
-      return resultPg.rows ?? [];
+      if (filters?.profesional_id) {
+        sql += ` AND t.profesional_id = $${i++}`;
+        values.push(filters.profesional_id);
+      }
+
+      if (filters?.paciente_id) {
+        sql += ` AND t.paciente_id = $${i++}`;
+        values.push(filters.paciente_id);
+      }
+
+      sql += ' ORDER BY t.fecha ASC';
+
+      const result = await this.getDBPool().query(sql, values);
+      return result.rows;
+
     } catch (error) {
       LogHelper.logError(error);
-      return [];
+      throw error;
     }
   };
 
   getAllAsync = async () => {
-    return this.listAsync();
+    try {
+      const sql = 'SELECT * FROM turnos ORDER BY fecha DESC';
+      const result = await this.getDBPool().query(sql);
+      return result.rows;
+    } catch (error) {
+      LogHelper.logError(error);
+      throw error;
+    }
   };
 
   getByIdAsync = async (id) => {
     try {
-      const sql = `
-        SELECT
-          t.*,
-          p.nombre_completo AS paciente_nombre,
-          prof.nombre_completo AS profesional_nombre,
-          esp_turno.nombre AS especialidad_nombre
-        FROM turnos t
-        LEFT JOIN pacientes p ON p.id = t.paciente_id
-        LEFT JOIN profesionales prof ON prof.id = t.profesional_id
-        LEFT JOIN especialidades esp_turno ON esp_turno.id = COALESCE(t.especialidad_id, prof.id_especialidad)
-        WHERE t.id = $1
-        LIMIT 1
-      `;
-      const resultPg = await this.getDBPool().query(sql, [id]);
-      return resultPg.rows[0] ?? null;
+      const sql = 'SELECT * FROM turnos WHERE id = $1';
+      const result = await this.getDBPool().query(sql, [id]);
+      return result.rows[0];
     } catch (error) {
       LogHelper.logError(error);
-      return null;
+      throw error;
     }
   };
 
+  // 🚀 CREATE ARREGLADO: YA NO BORRA CAMPOS NI HACE UPDATE INNECESARIO
   createAsync = async (entity) => {
-    let newId = 0;
     try {
+      console.log("XXXX: " +  entity.descripcion);
       const sql = `
         INSERT INTO turnos (
           paciente_id,
@@ -108,89 +91,61 @@ export default class TurnosRepository {
         entity.paciente_id,
         entity.profesional_id,
         entity.fecha,
-        entity.creado_el ?? new Date(),
-        entity.estado ?? 'pendiente',
-        entity.descripcion ?? null,
-        entity.especialidad_id ?? null,
+        new Date(),
+        entity.estado,
+        entity.descripcion,
+        entity.especialidad_id,
       ];
 
       const resultPg = await this.getDBPool().query(sql, values);
-      newId = resultPg.rows[0].id;
+      return resultPg.rows[0].id;
 
-      if (
-        newId &&
-        (entity.descripcion !== undefined || entity.especialidad_id !== undefined)
-      ) {
-        const updateSql = `
-          UPDATE turnos SET
-            descripcion = COALESCE($2, descripcion),
-            especialidad_id = COALESCE($3, especialidad_id)
-          WHERE id = $1
-        `;
-        const updateValues = [
-          newId,
-          entity.descripcion ?? null,
-          entity.especialidad_id ?? null,
-        ];
-        await this.getDBPool().query(updateSql, updateValues);
-      }
     } catch (error) {
       LogHelper.logError(error);
       throw error;
     }
-    return newId;
-  };
-
-  updateEstadoAsync = async (id, estado) => {
-    try {
-      const sql = `
-        UPDATE turnos
-        SET estado = $2
-        WHERE id = $1
-      `;
-      const resultPg = await this.getDBPool().query(sql, [id, estado]);
-      return resultPg.rowCount ?? 0;
-    } catch (error) {
-      LogHelper.logError(error);
-      return 0;
-    }
   };
 
   updateAsync = async (entity) => {
-    console.log(`TurnosRepository.updateAsync(${JSON.stringify(entity)})`);
-    let rowsAffected = 0;
-    const id = Number(entity.id);
-
     try {
-      const previous = await this.getByIdAsync(id);
-      if (!previous) return 0;
-
       const sql = `
         UPDATE turnos SET
-          estado = COALESCE($2, estado),
-          paciente_id = COALESCE($3, paciente_id),
-          profesional_id = COALESCE($4, profesional_id),
-          fecha = COALESCE($5, fecha),
-          descripcion = COALESCE($6, descripcion),
-          especialidad_id = COALESCE($7, especialidad_id)
+          paciente_id = $2,
+          profesional_id = $3,
+          fecha = $4,
+          estado = $5,
+          descripcion = $6,
+          especialidad_id = $7
         WHERE id = $1
       `;
 
       const values = [
-        id,
-        entity.estado ?? null,
-        entity.paciente_id ?? null,
-        entity.profesional_id ?? null,
-        entity.fecha ?? null,
+        entity.id,
+        entity.paciente_id,
+        entity.profesional_id,
+        entity.fecha,
+        entity.estado,
         entity.descripcion ?? null,
-        entity.especialidad_id ?? null,
+        entity.especialidad_id ?? null
       ];
 
-      const resultPg = await this.getDBPool().query(sql, values);
-      rowsAffected = resultPg.rowCount;
+      await this.getDBPool().query(sql, values);
+      return true;
+
     } catch (error) {
       LogHelper.logError(error);
+      throw error;
     }
-    return rowsAffected;
+  };
+
+  updateEstadoAsync = async (id, estado) => {
+    try {
+      const sql = `UPDATE turnos SET estado = $2 WHERE id = $1`;
+      await this.getDBPool().query(sql, [id, estado]);
+      return true;
+    } catch (error) {
+      LogHelper.logError(error);
+      throw error;
+    }
   };
 }
