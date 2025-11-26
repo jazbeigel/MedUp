@@ -1,151 +1,164 @@
+import pkg from 'pg';
+import config from './../configs/db-config.js';
 import LogHelper from './../helpers/log-helper.js';
-import PgPool from './../helpers/pg-pool.js';
+
+const { Pool } = pkg;
 
 export default class TurnosRepository {
-  constructor() {
-    this.db = PgPool;
-  }
 
-  getDBPool() {
-    return this.db.getPool();
-  }
-
-  listAsync = async (filters) => {
-    try {
-      let sql = `
-        SELECT t.*, 
-               p.nombre AS paciente_nombre, 
-               pr.nombre AS profesional_nombre,
-               e.descripcion AS especialidad
-        FROM turnos t
-        LEFT JOIN pacientes p ON t.paciente_id = p.id
-        LEFT JOIN profesionales pr ON t.profesional_id = pr.id
-        LEFT JOIN especialidades e ON t.especialidad_id = e.id
-        WHERE 1 = 1
-      `;
-      
-      const values = [];
-      let i = 1;
-
-      if (filters?.profesional_id) {
-        sql += ` AND t.profesional_id = $${i++}`;
-        values.push(filters.profesional_id);
-      }
-
-      if (filters?.paciente_id) {
-        sql += ` AND t.paciente_id = $${i++}`;
-        values.push(filters.paciente_id);
-      }
-
-      sql += ' ORDER BY t.fecha ASC';
-
-      const result = await this.getDBPool().query(sql, values);
-      return result.rows;
-
-    } catch (error) {
-      LogHelper.logError(error);
-      throw error;
+    constructor() {
+        console.log('TurnosRepository.constructor()');
+        this.DBPool = null;
     }
-  };
 
-  getAllAsync = async () => {
-    try {
-      const sql = 'SELECT * FROM turnos ORDER BY fecha DESC';
-      const result = await this.getDBPool().query(sql);
-      return result.rows;
-    } catch (error) {
-      LogHelper.logError(error);
-      throw error;
-    }
-  };
+    getDBPool = () => {
+        if (this.DBPool == null) {
+            this.DBPool = new Pool(config);
+        }
+        return this.DBPool;
+    };
 
-  getByIdAsync = async (id) => {
-    try {
-      const sql = 'SELECT * FROM turnos WHERE id = $1';
-      const result = await this.getDBPool().query(sql, [id]);
-      return result.rows[0];
-    } catch (error) {
-      LogHelper.logError(error);
-      throw error;
-    }
-  };
+    listAsync = async (filters) => {
+        try {
+            let sql = `
+                SELECT t.*,
+                    p.nombre AS paciente_nombre,
+                    pr.nombre AS profesional_nombre,
+                    e.descripcion AS especialidad
+                FROM turnos t
+                LEFT JOIN pacientes p ON t.paciente_id = p.id
+                LEFT JOIN profesionales pr ON t.profesional_id = pr.id
+                LEFT JOIN especialidades e ON t.especialidad_id = e.id
+                WHERE 1 = 1
+            `;
 
-  // 🚀 CREATE ARREGLADO: YA NO BORRA CAMPOS NI HACE UPDATE INNECESARIO
-  createAsync = async (entity) => {
-    try {
-      console.log("XXXX: " +  entity.descripcion);
-      const sql = `
-        INSERT INTO turnos (
-          paciente_id,
-          profesional_id,
-          fecha,
-          creado_el,
-          estado,
-          descripcion,
-          especialidad_id
-        ) VALUES ($1,$2,$3,$4,$5,$6,$7)
-        RETURNING id
-      `;
+            const values = [];
+            let i = 1;
 
-      const values = [
-        entity.paciente_id,
-        entity.profesional_id,
-        entity.fecha,
-        new Date(),
-        entity.estado,
-        entity.descripcion,
-        entity.especialidad_id,
-      ];
+            if (filters?.profesional_id) {
+                sql += ` AND t.profesional_id = $${i++}`;
+                values.push(filters.profesional_id);
+            }
 
-      const resultPg = await this.getDBPool().query(sql, values);
-      return resultPg.rows[0].id;
+            if (filters?.paciente_id) {
+                sql += ` AND t.paciente_id = $${i++}`;
+                values.push(filters.paciente_id);
+            }
 
-    } catch (error) {
-      LogHelper.logError(error);
-      throw error;
-    }
-  };
+            sql += ' ORDER BY t.fecha ASC';
 
-  updateAsync = async (entity) => {
-    try {
-      const sql = `
-        UPDATE turnos SET
-          paciente_id = $2,
-          profesional_id = $3,
-          fecha = $4,
-          estado = $5,
-          descripcion = $6,
-          especialidad_id = $7
-        WHERE id = $1
-      `;
+            const resultPg = await this.getDBPool().query(sql, values);
+            return resultPg.rows ?? [];
 
-      const values = [
-        entity.id,
-        entity.paciente_id,
-        entity.profesional_id,
-        entity.fecha,
-        entity.estado,
-        entity.descripcion ?? null,
-        entity.especialidad_id ?? null
-      ];
+        } catch (error) {
+            LogHelper.logError(error);
+            throw error;
+        }
+    };
 
-      await this.getDBPool().query(sql, values);
-      return true;
+    getAllAsync = async () => {
+        try {
+            const sql = 'SELECT * FROM turnos ORDER BY fecha DESC';
+            const result = await this.getDBPool().query(sql);
+            return result.rows;
+        } catch (error) {
+            LogHelper.logError(error);
+            throw error;
+        }
+    };
 
-    } catch (error) {
-      LogHelper.logError(error);
-      throw error;
-    }
-  };
+    getByIdAsync = async (id) => {
+        try {
+            const sql = `
+                SELECT *
+                FROM turnos
+                WHERE id = $1
+                LIMIT 1
+            `;
+            const result = await this.getDBPool().query(sql, [id]);
+            return result.rows[0] ?? null;
+        } catch (error) {
+            LogHelper.logError(error);
+            throw error;
+        }
+    };
 
-  updateEstadoAsync = async (id, estado) => {
-    try {
-      const sql = `UPDATE turnos SET estado = $2 WHERE id = $1`;
-      await this.getDBPool().query(sql, [id, estado]);
-      return true;
-    } catch (error) {
-      LogHelper.logError(error);
-      throw error;
-    }
-  };
+
+    createAsync = async (entity) => {
+        try {
+            const sql = `
+                INSERT INTO turnos (
+                    paciente_id,
+                    profesional_id,
+                    fecha,
+                    estado,
+                    descripcion,
+                    especialidad_id
+                )
+                VALUES ($1, $2, $3, $4, $5, $6)
+                RETURNING id;
+            `;
+
+            const values = [
+                entity.paciente_id,
+                entity.profesional_id,
+                entity.fecha,
+                entity.estado,
+                entity.descripcion,
+                entity.especialidad_id
+            ];
+
+            const result = await this.getDBPool().query(sql, values);
+            return result.rows[0].id;
+
+        } catch (error) {
+            LogHelper.logError(error);
+            throw error;
+        }
+    };
+
+
+    updateAsync = async (entity) => {
+        try {
+            const sql = `
+                UPDATE turnos SET
+                    paciente_id = $2,
+                    profesional_id = $3,
+                    fecha = $4,
+                    estado = $5,
+                    descripcion = $6,
+                    especialidad_id = $7
+                WHERE id = $1
+            `;
+
+            const values = [
+                entity.id,
+                entity.paciente_id,
+                entity.profesional_id,
+                entity.fecha,
+                entity.estado,
+                entity.descripcion,
+                entity.especialidad_id
+            ];
+
+            await this.getDBPool().query(sql, values);
+            return true;
+
+        } catch (error) {
+            LogHelper.logError(error);
+            throw error;
+        }
+    };
+
+    updateEstadoAsync = async (id, estado) => {
+        try {
+            const sql = `UPDATE turnos SET estado = $2 WHERE id = $1`;
+            await this.getDBPool().query(sql, [id, estado]);
+            return true;
+        } catch (error) {
+            LogHelper.logError(error);
+            throw error;
+        }
+    };
 }
+
