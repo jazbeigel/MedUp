@@ -1,99 +1,107 @@
-import React, { useEffect, useMemo, useState } from 'react'
-import { Platform } from 'react-native'
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+  Alert,
+  Platform,
+} from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 
-const API_PORT = 3000
+const API_PORT = 3000;
 const API_BASE_URL =
   Platform.OS === 'web'
     ? `http://${window.location.hostname}:${API_PORT}`
     : Platform.OS === 'android'
     ? `http://10.0.2.2:${API_PORT}`
-    : `http://localhost:${API_PORT}`
+    : `http://localhost:${API_PORT}`;
 
 export default function AgendarTurno({ navigation, route }) {
-  const paciente = route?.params?.paciente ?? null
-  const [nombre, setNombre] = useState('')
-  const [mail, setMail] = useState('')
-  const [sintomas, setSintomas] = useState('')
-  const [fecha, setFecha] = useState('')
-  const [hora, setHora] = useState('')
-  const [especialidadId, setEspecialidadId] = useState('')
-  const [profesionalId, setProfesionalId] = useState('')
-  const [especialidades, setEspecialidades] = useState([])
-  const [profesionales, setProfesionales] = useState([])
-  const [sending, setSending] = useState(false)
+  const paciente = route?.params?.paciente ?? null;
+  const [nombre, setNombre] = useState('');
+  const [mail, setMail] = useState('');
+  const [sintomas, setSintomas] = useState('');
+  const [fecha, setFecha] = useState('');
+  const [hora, setHora] = useState('');
+  const [especialidadId, setEspecialidadId] = useState('');
+  const [profesionalId, setProfesionalId] = useState('');
+  const [especialidades, setEspecialidades] = useState([]);
+  const [profesionales, setProfesionales] = useState([]);
+  const [sending, setSending] = useState(false);
 
   useEffect(() => {
     if (paciente) {
-      setNombre(paciente.nombre_completo ?? '')
-      setMail(paciente.email ?? '')
+      setNombre(paciente.nombre_completo ?? '');
+      setMail(paciente.email ?? '');
     }
-  }, [paciente])
+  }, [paciente]);
 
   useEffect(() => {
     const fetchEspecialidades = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/especialidades`)
-        if (!response.ok) throw new Error(`HTTP ${response.status}`)
-        const contentType = response.headers.get('content-type') ?? ''
-        if (!contentType.includes('application/json')) throw new Error('Respuesta inválida')
-        const data = await response.json()
-        setEspecialidades(Array.isArray(data) ? data : [])
+        const response = await fetch(`${API_BASE_URL}/api/especialidades`);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const contentType = response.headers.get('content-type') ?? '';
+        if (!contentType.includes('application/json')) throw new Error('Respuesta inválida');
+        const data = await response.json();
+        setEspecialidades(Array.isArray(data) ? data : []);
       } catch (error) {
-        console.error('Error al obtener especialidades', error)
-        setEspecialidades([])
+        console.error('Error al obtener especialidades', error);
+        setEspecialidades([]);
       }
-    }
+    };
 
     const fetchProfesionales = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/profesionales`)
-        if (!response.ok) throw new Error(`HTTP ${response.status}`)
-        const contentType = response.headers.get('content-type') ?? ''
-        if (!contentType.includes('application/json')) throw new Error('Respuesta inválida')
-        const data = await response.json()
-        setProfesionales(Array.isArray(data) ? data : [])
+        const response = await fetch(`${API_BASE_URL}/api/profesionales`);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const contentType = response.headers.get('content-type') ?? '';
+        if (!contentType.includes('application/json')) throw new Error('Respuesta inválida');
+        const data = await response.json();
+        setProfesionales(Array.isArray(data) ? data : []);
       } catch (error) {
-        console.error('Error al obtener profesionales', error)
-        setProfesionales([])
+        console.error('Error al obtener profesionales', error);
+        setProfesionales([]);
       }
-    }
+    };
 
-    fetchEspecialidades()
-    fetchProfesionales()
-  }, [])
+    fetchEspecialidades();
+    fetchProfesionales();
+  }, []);
 
   const profesionalesFiltrados = useMemo(() => {
-    if (!especialidadId) return profesionales
+    if (!especialidadId) return profesionales;
     return profesionales.filter(
       (prof) => String(prof.id_especialidad ?? '') === String(especialidadId)
-    )
-  }, [especialidadId, profesionales])
+    );
+  }, [especialidadId, profesionales]);
 
   const especialidadSeleccionada =
-    especialidades.find((esp) => String(esp.id) === String(especialidadId))?.nombre ?? null
+    especialidades.find((esp) => String(esp.id) === String(especialidadId))?.nombre ?? null;
 
   const obtenerNombreEspecialidad = (id) => {
-    if (!id) return null
-    const esp = especialidades.find((item) => String(item.id) === String(id))
-    return esp?.nombre ?? null
-  }
+    if (!id) return null;
+    const esp = especialidades.find((item) => String(item.id) === String(id));
+    return esp?.nombre ?? null;
+  };
 
-  const tomarValores = async (e) => {
-    e.preventDefault()
-
+  const tomarValores = async () => {
     if (!paciente?.id) {
-      alert('No encontramos los datos del paciente. Volvé a iniciar sesión.')
-      return
+      Alert.alert('Error', 'No encontramos los datos del paciente. Volvé a iniciar sesión.');
+      return;
     }
 
     if (!sintomas || !fecha || !hora || !especialidadId || !profesionalId) {
-      alert('Completá todos los campos requeridos.')
-      return
+      Alert.alert('Error', 'Completá todos los campos requeridos.');
+      return;
     }
 
-    setSending(true)
+    setSending(true);
     try {
-      console.log("sintomas: "+sintomas);
+      console.log('sintomas: ' + sintomas);
       console.log(`${API_BASE_URL}/api/turnos`);
       const response = await fetch(`${API_BASE_URL}/api/turnos`, {
         method: 'POST',
@@ -106,210 +114,210 @@ export default function AgendarTurno({ navigation, route }) {
           estado: 'pendiente',
           especialidad_id: Number(especialidadId),
         }),
-      })
+      });
 
-      const contentType = response.headers.get('content-type') ?? ''
-      const payload = contentType.includes('application/json') ? await response.json() : null
+      const contentType = response.headers.get('content-type') ?? '';
+      const payload = contentType.includes('application/json') ? await response.json() : null;
 
       if (!response.ok) {
-        const errorMessage = payload?.error ?? 'No pudimos registrar tu solicitud.'
-        throw new Error(errorMessage)
+        const errorMessage = payload?.error ?? 'No pudimos registrar tu solicitud.';
+        throw new Error(errorMessage);
       }
 
-      alert('Solicitud enviada correctamente. En breve el profesional la verá en su panel.')
-      navigation?.goBack?.()
+      Alert.alert('Éxito', 'Solicitud enviada correctamente. En breve el profesional la verá en su panel.');
+      navigation?.goBack?.();
     } catch (error) {
-      console.error('Error al crear solicitud de turno', error)
-      alert(error?.message ?? 'Ocurrió un error al enviar la solicitud.')
+      console.error('Error al crear solicitud de turno', error);
+      Alert.alert('Error', error?.message ?? 'Ocurrió un error al enviar la solicitud.');
     } finally {
-      setSending(false)
+      setSending(false);
     }
-  }
+  };
 
   return (
-    <div className="form-screen">
-      <div className="form-container">
-        <h2 className="form-title">Solicitá un turno</h2>
+    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+      <View style={styles.formContainer}>
+        <Text style={styles.title}>Solicitá un turno</Text>
 
-        <form onSubmit={tomarValores} className="form-card">
-        <input
-          className="input"
-          type="text"
+        <TextInput
+          style={styles.input}
           placeholder="Nombre completo"
           value={nombre}
-          onChange={(e) => setNombre(e.target.value)}
-          disabled
+          onChangeText={setNombre}
+          editable={false}
         />
 
-        <input
-          className="input"
-          type="email"
+        <TextInput
+          style={styles.input}
           placeholder="Correo electrónico"
           value={mail}
-          onChange={(e) => setMail(e.target.value)}
-          disabled
+          onChangeText={setMail}
+          editable={false}
+          keyboardType="email-address"
         />
 
-        <input
-          className="input"
-          type="date"
+        <TextInput
+          style={styles.input}
+          placeholder="Fecha (YYYY-MM-DD)"
           value={fecha}
-          onChange={(e) => setFecha(e.target.value)}
+          onChangeText={setFecha}
         />
 
-        <input
-          className="input"
-          type="time"
+        <TextInput
+          style={styles.input}
+          placeholder="Hora (HH:MM)"
           value={hora}
-          onChange={(e) => setHora(e.target.value)}
+          onChangeText={setHora}
         />
 
-        <select
-          className="input"
-          value={especialidadId}
-          onChange={(e) => {
-            setEspecialidadId(e.target.value)
-            setProfesionalId('')
-          }}
-        >
-          <option value="">Seleccioná una especialidad</option>
-          {especialidades.map((esp) => (
-            <option key={esp.id} value={String(esp.id)}>
-              {esp.nombre}
-            </option>
-          ))}
-        </select>
-
-        <select
-          className="input"
-          value={profesionalId}
-          onChange={(e) => setProfesionalId(e.target.value)}
-        >
-          <option value="">Seleccioná un profesional</option>
-          {profesionalesFiltrados.map((prof) => {
-            const espName = obtenerNombreEspecialidad(prof.id_especialidad)
-            return (
-              <option key={prof.id} value={String(prof.id)}>
-                {prof.nombre_completo}
-                {espName ? ` - ${espName}` : ''}
-              </option>
-            )
-          })}
-        </select>
-
-        <textarea
-          className="textarea"
-          placeholder="Describí tus síntomas o motivo de la consulta"
-          rows="4"
-          value={sintomas}
-          onChange={(e) => setSintomas(e.target.value)}
-        />
-
-          <button type="submit" className="button" disabled={sending}>
-            {sending ? 'Enviando...' : 'Enviar solicitud'}
-          </button>
-          <button
-            type="button"
-            className="button button-secondary"
-            onClick={() => navigation?.goBack?.()}
+        <View style={styles.pickerContainer}>
+          <Picker
+            selectedValue={especialidadId}
+            onValueChange={(value) => {
+              setEspecialidadId(value);
+              setProfesionalId('');
+            }}
+            style={styles.picker}
           >
-            Cancelar
-          </button>
-        </form>
-      </div>
+            <Picker.Item label="Seleccioná una especialidad" value="" />
+            {especialidades.map((esp) => (
+              <Picker.Item key={esp.id} label={esp.nombre} value={String(esp.id)} />
+            ))}
+          </Picker>
+        </View>
 
-      <style>
-        {`
-        * {
-          font-family: 'Inter', sans-serif;
-        }
+        <View style={styles.pickerContainer}>
+          <Picker
+            selectedValue={profesionalId}
+            onValueChange={setProfesionalId}
+            style={styles.picker}
+          >
+            <Picker.Item label="Seleccioná un profesional" value="" />
+            {profesionalesFiltrados.map((prof) => {
+              const espName = obtenerNombreEspecialidad(prof.id_especialidad);
+              return (
+                <Picker.Item
+                  key={prof.id}
+                  label={`${prof.nombre_completo}${espName ? ` - ${espName}` : ''}`}
+                  value={String(prof.id)}
+                />
+              );
+            })}
+          </Picker>
+        </View>
 
-        .form-screen {
-          min-height: 100vh;
-          width: 100%;
-          background: linear-gradient(135deg, #dfe7ff, #f7f8ff);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 20px;
-        }
+        <TextInput
+          style={styles.textarea}
+          placeholder="Describí tus síntomas o motivo de la consulta"
+          value={sintomas}
+          onChangeText={setSintomas}
+          multiline
+          numberOfLines={4}
+        />
 
-        .form-container {
-          width: 100%;
-          max-width: 460px;
-          background-color: #ffffff;
-          border-radius: 18px;
-          padding: 26px 24px 32px;
-          box-shadow: 0 20px 40px rgba(22, 46, 116, 0.12);
-        }
+        <TouchableOpacity
+          style={[styles.button, sending && styles.buttonDisabled]}
+          onPress={tomarValores}
+          disabled={sending}
+        >
+          <Text style={styles.buttonText}>
+            {sending ? 'Enviando...' : 'Enviar solicitud'}
+          </Text>
+        </TouchableOpacity>
 
-        .form-title {
-          font-size: 20px;
-          color: #1A1A6E;
-          font-weight: 600;
-          margin-bottom: 15px;
-        }
-
-        .form-card {
-          display: grid;
-          grid-template-columns: 1fr;
-          gap: 12px;
-        }
-
-        @media (min-width: 720px) {
-          .form-card {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-          }
-          .form-card .textarea,
-          .form-card .button,
-          .form-card .button-secondary {
-            grid-column: span 2;
-          }
-        }
-
-        .input {
-          width: 100%;
-          border: 1px solid #d6daf2;
-          border-radius: 10px;
-          padding: 10px 12px;
-          font-size: 15px;
-          background-color: #f8f9ff;
-        }
-
-        .textarea {
-          width: 100%;
-          border-radius: 10px;
-          border: 1px solid #d6daf2;
-          padding: 12px;
-          font-size: 15px;
-          background-color: #f8f9ff;
-          min-height: 100px;
-          resize: vertical;
-        }
-
-        .button {
-          width: 100%;
-          height: 44px;
-          background-color: #1A1A6E;
-          color: white;
-          border: none;
-          border-radius: 10px;
-          font-size: 15px;
-          font-weight: 600;
-          cursor: pointer;
-          margin-top: 5px;
-        }
-        .button[disabled] {
-          opacity: 0.7;
-          cursor: not-allowed;
-        }
-        .button-secondary {
-          background-color: #fff;
-          color: #1A1A6E;
-          border: 1px solid #1A1A6E;
-        }
-        `}
-      </style>
-    </div>
-  )
+        <TouchableOpacity
+          style={styles.buttonSecondary}
+          onPress={() => navigation?.goBack?.()}
+        >
+          <Text style={styles.buttonSecondaryText}>Cancelar</Text>
+        </TouchableOpacity>
+      </View>
+    </ScrollView>
+  );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F7F8FC',
+  },
+  contentContainer: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    padding: 20,
+  },
+  formContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 18,
+    padding: 26,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  title: {
+    fontSize: 20,
+    color: '#1A1A6E',
+    fontWeight: '600',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#d6daf2',
+    borderRadius: 10,
+    padding: 12,
+    fontSize: 15,
+    backgroundColor: '#f8f9ff',
+    marginBottom: 12,
+  },
+  pickerContainer: {
+    borderWidth: 1,
+    borderColor: '#d6daf2',
+    borderRadius: 10,
+    backgroundColor: '#f8f9ff',
+    marginBottom: 12,
+  },
+  picker: {
+    height: 50,
+  },
+  textarea: {
+    borderWidth: 1,
+    borderColor: '#d6daf2',
+    borderRadius: 10,
+    padding: 12,
+    fontSize: 15,
+    backgroundColor: '#f8f9ff',
+    marginBottom: 20,
+    textAlignVertical: 'top',
+  },
+  button: {
+    backgroundColor: '#1A1A6E',
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  buttonDisabled: {
+    opacity: 0.7,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  buttonSecondary: {
+    backgroundColor: '#fff',
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#1A1A6E',
+  },
+  buttonSecondaryText: {
+    color: '#1A1A6E',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+});
