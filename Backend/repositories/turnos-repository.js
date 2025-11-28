@@ -20,32 +20,27 @@ export default class TurnosRepository {
 
     listAsync = async (filters) => {
         try {
-            let sql = `
-                SELECT t.*,
-                    p.nombre AS paciente_nombre,
-                    pr.nombre AS profesional_nombre,
-                    e.descripcion AS especialidad
-                FROM turnos t
-                LEFT JOIN pacientes p ON t.paciente_id = p.id
-                LEFT JOIN profesionales pr ON t.profesional_id = pr.id
-                LEFT JOIN especialidades e ON t.especialidad_id = e.id
-                WHERE 1 = 1
-            `;
+            let sql = `SELECT * FROM turnos WHERE 1 = 1`;
 
             const values = [];
             let i = 1;
 
-            if (filters?.profesional_id) {
-                sql += ` AND t.profesional_id = $${i++}`;
-                values.push(filters.profesional_id);
+            if (filters?.profesionalId) {
+                sql += ` AND profesional_id = $${i++}`;
+                values.push(filters.profesionalId);
             }
 
-            if (filters?.paciente_id) {
-                sql += ` AND t.paciente_id = $${i++}`;
-                values.push(filters.paciente_id);
+            if (filters?.pacienteId) {
+                sql += ` AND paciente_id = $${i++}`;
+                values.push(filters.pacienteId);
             }
 
-            sql += ' ORDER BY t.fecha ASC';
+            if (filters?.estado) {
+                sql += ` AND estado = $${i++}`;
+                values.push(filters.estado);
+            }
+
+            sql += ' ORDER BY fecha ASC';
 
             const resultPg = await this.getDBPool().query(sql, values);
             return resultPg.rows ?? [];
