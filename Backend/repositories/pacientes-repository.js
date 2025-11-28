@@ -49,6 +49,7 @@ export default class PacientesRepository {
     try {
       const sql = `
         INSERT INTO pacientes (
+          usuario_id,
           nombre_completo,
           fecha_nacimiento,
           dni,
@@ -56,10 +57,11 @@ export default class PacientesRepository {
           direccion,
           telefono,
           contrasena
-        ) VALUES ($1,$2,$3,$4,$5,$6,$7)
+        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
         RETURNING *;
       `;
       const values = [
+        entity.usuario_id || null,
         entity.nombre_completo,
         entity.fecha_nacimiento,   // 'YYYY-MM-DD'
         entity.dni,
