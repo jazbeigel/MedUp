@@ -98,7 +98,8 @@ export default function AgendarTurno({ navigation, route }) {
       Alert.alert('Error', 'Completá todos los campos requeridos.');
       return;
     }
-
+    console.log('pasa 1: '+hora);
+    console.log('pasa 2: '+especialidadId);
     // Pad hora and minuto to ensure valid format
     const [horaPart, minutoPart] = hora.split(':').map(p => p?.trim() ?? '');
     const paddedHora = (horaPart || '0').padStart(2, '0');

@@ -114,10 +114,10 @@ export default function HomeProfesional({ navigation, route }) {
     setProcessingId(solicitudId);
     setStatusMessage(null);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/turnos/${solicitudId}`, {
-        method: 'PUT',
+      const response = await fetch(`${API_BASE_URL}/api/turnos/${solicitudId}/estado`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ estado }),
+        body: JSON.stringify({ estado: estado  }),
       });
       if (!response.ok) throw new Error('No se pudo actualizar el estado.');
       await fetchSolicitudes();
