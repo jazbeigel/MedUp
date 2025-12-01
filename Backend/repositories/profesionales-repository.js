@@ -53,18 +53,16 @@ export default class ProfesionalesRepository {
     try {
         const sql = `
         INSERT INTO profesionales (
-            usuario_id,
             nombre_completo,
             matricula,
             email,
             telefono,
             id_especialidad,
             contrasena
-        ) VALUES ($1,$2,$3,$4,$5,$6,$7)
+        ) VALUES ($1,$2,$3,$4,$5,$6)
         RETURNING id;
         `;
         const values = [
-        entity.usuario_id || null,
         entity?.nombre_completo ?? '',
         entity?.matricula ?? '',
         entity?.email ?? '',
@@ -89,18 +87,16 @@ export default class ProfesionalesRepository {
 
         const sql = `
         UPDATE profesionales SET
-            usuario_id       = $2,
-            nombre_completo = $3,
-            matricula       = $4,
-            email           = $5,
-            telefono        = $6,
-            id_especialidad = $7,
-            contrasena      = $8
+            nombre_completo = $2,
+            matricula       = $3,
+            email           = $4,
+            telefono        = $5,
+            id_especialidad = $6,
+            contrasena      = $7
         WHERE id = $1
         `;
         const values = [
         id,
-        entity?.usuario_id       ?? prev.usuario_id,
         entity?.nombre_completo ?? prev.nombre_completo,
         entity?.matricula       ?? prev.matricula,
         entity?.email           ?? prev.email,

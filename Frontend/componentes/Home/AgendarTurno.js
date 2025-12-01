@@ -94,8 +94,21 @@ export default function AgendarTurno({ navigation, route }) {
       return;
     }
 
-    if (!sintomas || !fecha || !hora || !especialidadId || !profesionalId) {
+    if (!sintomas || !fecha || !hora || !especialidadId || !profesionalId || Number(profesionalId) <= 0 || Number(especialidadId) <= 0) {
       Alert.alert('Error', 'Completá todos los campos requeridos.');
+      return;
+    }
+
+    // Pad hora and minuto to ensure valid format
+    const [horaPart, minutoPart] = hora.split(':').map(p => p?.trim() ?? '');
+    const paddedHora = (horaPart || '0').padStart(2, '0');
+    const paddedMinuto = (minutoPart || '0').padStart(2, '0');
+    const fechaHora = `${fecha}T${paddedHora}:${paddedMinuto}`;
+
+    // Validate fecha
+    const fechaValida = new Date(fechaHora);
+    if (Number.isNaN(fechaValida.getTime())) {
+      Alert.alert('Error', 'La fecha u hora no es válida. Usá el formato YYYY-MM-DD para fecha y HH:MM para hora.');
       return;
     }
 
@@ -109,7 +122,7 @@ export default function AgendarTurno({ navigation, route }) {
         body: JSON.stringify({
           paciente_id: paciente.id,
           profesional_id: Number(profesionalId),
-          fecha: `${fecha}T${hora}`,
+          fecha: fechaHora,
           descripcion: sintomas,
           estado: 'pendiente',
           especialidad_id: Number(especialidadId),
@@ -135,7 +148,7 @@ export default function AgendarTurno({ navigation, route }) {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer} keyboardShouldPersistTaps="always">
       <View style={styles.formContainer}>
         <Text style={styles.title}>Solicitá un turno</Text>
 
